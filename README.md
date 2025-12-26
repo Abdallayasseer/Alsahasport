@@ -181,7 +181,3 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 **Developed by Eng. Abdallah Yasser** *Full Stack Developer (Node.js & React)*
-
-```
-
-```
