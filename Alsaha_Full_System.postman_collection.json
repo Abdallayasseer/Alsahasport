@@ -1,0 +1,465 @@
+{
+	"info": {
+		"_postman_id": "f5e6d7c8-90ab-cdef-1234-567890abcdef",
+		"name": "Alsaha Sport IPTV - Full System",
+		"description": "مجموعة كاملة لاختبار نظام IPTV (Admin, Auth, Streaming, Providers).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "⚙️ 1. Admin Panel",
+			"item": [
+				{
+					"name": "1. Admin Login (Start Here)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success) {",
+									"    pm.environment.set(\"admin_token\", jsonData.data.token);",
+									"    console.log(\"🔑 Admin Token Saved!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"login"
+							]
+						},
+						"description": "تسجيل دخول الأدمن وحفظ التوكن تلقائياً."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Activation Code",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"durationDays\": 30\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"codes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get All Codes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"codes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Delete Code",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/code/658b...",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"code",
+								"658b..."
+							]
+						},
+						"description": "ضع ID الكود مكان 658b..."
+					},
+					"response": []
+				},
+				{
+					"name": "5. Get Live Sessions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/sessions/live",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"sessions",
+								"live"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Add Provider",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Falcon IPTV\",\n    \"type\": \"xtream\",\n    \"dns\": \"http://line.falcon.com\",\n    \"username\": \"user1\",\n    \"password\": \"pass1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/provider",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"provider"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. Add Channel",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"BeIN Sports 1\",\n    \"category\": \"Sports\",\n    \"streamUrl\": \"http://example.com/live.m3u8\",\n    \"logoUrl\": \"http://example.com/logo.png\",\n    \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/channels",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"channels"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔐 2. Auth (User Access)",
+			"item": [
+				{
+					"name": "1. Activate Code (Login)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success) {",
+									"    pm.environment.set(\"user_token\", jsonData.data.token);",
+									"    console.log(\"👤 User Token Saved!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"PUT_CODE_HERE\",\n    \"deviceId\": \"browser-fingerprint-123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/activate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"activate"
+							]
+						},
+						"description": "ضع الكود الذي أنشأته من الأدمن هنا لتسجيل الدخول."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Validate Session (Heartbeat)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "تسجيل خروج (حذف الجلسة)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📺 3. Streaming",
+			"item": [
+				{
+					"name": "Get All Channels",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/stream/channels",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"stream",
+								"channels"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/stream/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"stream",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Play Channel",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/stream/channel/CHANNEL_ID_HERE",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"stream",
+								"channel",
+								"CHANNEL_ID_HERE"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api"
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "user_token",
+			"value": ""
+		}
+	]
+}
