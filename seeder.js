@@ -13,13 +13,13 @@ const importData = async () => {
     const masterAdmin = new Admin({
       username: process.env.ADMIN_USERNAME,
       password: process.env.ADMIN_PASSWORD,
-      role: "master",
+      role: "MASTER_ADMIN",
     });
 
     const dailyAdmin = new Admin({
       username: process.env.DAILY_ADMIN_USERNAME,
       password: process.env.DAILY_ADMIN_PASSWORD,
-      role: "editor",
+      role: "DAILY_ADMIN",
     });
 
     await masterAdmin.save();

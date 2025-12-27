@@ -1,18 +1,16 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   activateCode,
   validateSession,
-  logout
+  logout,
 } = require("../controllers/auth.Controller");
-const { protectStream } = require("../middlewares/authMiddleware");
 
-
-
-router.post('/validate', protectStream, validateSession);
-router.post('/logout', protectStream, logout); 
+const { protectStreamOrAdmin } = require("../middlewares/authMiddleware");
 
 router.post("/activate", activateCode);
-router.post("/validate", protectStream, validateSession);
+router.post("/validate", protectStreamOrAdmin, validateSession);
+router.post("/logout", protectStreamOrAdmin, logout);
 
 module.exports = router;
