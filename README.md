@@ -90,6 +90,8 @@ MONGO_URI=mongodb://localhost:27017/alsaha_sport
 JWT_SECRET=YourSuperSecretKeyHere_123!
 ADMIN_USERNAME=AdminUserName
 ADMIN_PASSWORD=AdminPass
+DAILY_ADMIN_USERNAME=staffusername
+DAILY_ADMIN_PASSWORD=staffPass
 NODE_ENV=development
 
 ```

@@ -8,19 +8,24 @@ connectDB();
 
 const importData = async () => {
   try {
-    // 1. 
     await Admin.deleteMany();
 
-    // 2. 
-
-    const adminUser = new Admin({
-      username: process.env.ADMIN_USERNAME,  
-      password: process.env.ADMIN_PASSWORD, 
+    const masterAdmin = new Admin({
+      username: process.env.ADMIN_USERNAME,
+      password: process.env.ADMIN_PASSWORD,
+      role: "master",
     });
 
-    await adminUser.save();
+    const dailyAdmin = new Admin({
+      username: process.env.DAILY_ADMIN_USERNAME,
+      password: process.env.DAILY_ADMIN_PASSWORD,
+      role: "editor",
+    });
 
-    console.log("Admin Imported Successfully!");
+    await masterAdmin.save();
+    await dailyAdmin.save();
+
+    console.log("Admins Created: Master & Editor");
     process.exit();
   } catch (error) {
     console.error(`Error: ${error.message}`);
