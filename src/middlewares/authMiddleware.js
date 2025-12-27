@@ -77,3 +77,18 @@ exports.protectStreamOrAdmin = async (req, res, next) => {
     return sendResponse(res, 401, false, "No token provided");
   }
 };
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // req.admin بييجي من دالة protectAdmin اللي اشتغلت قبل دي
+    if (!roles.includes(req.admin.role)) {
+      return sendResponse(
+        res,
+        403,
+        false,
+        "Requires Higher Permission"
+      );
+    }
+    next();
+  };
+};

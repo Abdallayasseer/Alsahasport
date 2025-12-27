@@ -6,7 +6,7 @@ const {
   getCategories,
   getChannelStream,
 } = require("../controllers/stream.Controller");
-const { protectStreamOrAdmin } = require('../middlewares/authMiddleware');
+const { protectStreamOrAdmin, restrictTo } = require('../middlewares/authMiddleware');
 router.use(protectStreamOrAdmin); 
 
 router.get("/channels", getChannels); 

@@ -19,29 +19,24 @@ exports.loginAdmin = async (req, res) => {
   try {
     const admin = await Admin.findOne({ username }).select("+password");
 
-    if (!admin) {
+    if (admin && (await bcrypt.compare(password, admin.password))) {
+      const token = generateAdminToken(admin._id);
+
+      admin.password = undefined;
+
+      sendResponse(res, 200, true, "Admin Logged in Successfully", {
+        _id: admin._id,
+        username: admin.username,
+        role: admin.role, 
+        token: token,
+      });
+    } else {
       return sendResponse(res, 401, false, "Invalid username or password");
     }
-
-    const isMatch = await admin.matchPassword(password);
-
-    if (!isMatch) {
-      return sendResponse(res, 401, false, "Invalid username or password");
-    }
-
-    const token = generateAdminToken(admin._id);
-
-    sendResponse(res, 200, true, "Admin Logged in Successfully", {
-      _id: admin._id,
-      username: admin.username,
-      role: admin.role,
-      token,
-    });
   } catch (error) {
     sendResponse(res, 500, false, error.message);
   }
 };
-
 
 exports.createCode = async (req, res) => {
   const { durationDays } = req.body; // 30, 90, 365
