@@ -143,9 +143,8 @@ The API is currently live on **Railway**:
 
 **Abdallah Yasser**
 
-* Full Stack Developer (MERN Stack)
-* [GitHub Profile](https://www.google.com/search?q=https://github.com/Abdallayasseer)
-
+  Full Stack Developer (MERN Stack)
+  
 ---
 
 *© 2025 Alsahasport Backend System.*
