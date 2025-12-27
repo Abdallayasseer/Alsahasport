@@ -1,48 +1,49 @@
-# 📺 Alsaha Sport - IPTV & Streaming Backend Engine
+# 🏆 Alsahasport Backend API
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg) ![Express](https://img.shields.io/badge/Express-v4.18-blue.svg) ![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-forestgreen.svg) ![JWT](https://img.shields.io/badge/Auth-JWT-orange.svg)
+![Node.js](https://img.shields.io/badge/Node.js-V22-green?style=for-the-badge&logo=node.js)
+![Express.js](https://img.shields.io/badge/Express.js-4.x-black?style=for-the-badge&logo=express)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)
+![Railway](https://img.shields.io/badge/Deployed%20on-Railway-purple?style=for-the-badge&logo=railway)
 
-> A robust, high-performance backend system for IPTV streaming services. Featuring a **secure activation-code authentication system** and **Single-Device Locking mechanism** to prevent piracy and account sharing.
+**Alsahasport** is a robust, high-performance RESTful API designed to manage a sports streaming platform. It features a secure subscription system based on activation codes with strict **Single-Device Session Locking** and a tiered **Role-Based Access Control (RBAC)** system for administration.
 
 ---
 
 ## 🚀 Key Features
 
-### 🔐 Advanced Security & Auth
-- **Code-Based Login:** No email/password required. Users log in via purchased Activation Codes.
-- **Single Device Lock (SDL):** Smart session management that strictly enforces one active device per code. Logging in from a new device automatically invalidates the previous session.
-- **JWT Authentication:** Secure stateless authentication for API access.
-- **Device Fingerprinting:** Binds sessions to IP and User-Agent.
+### 🔐 Security & Authentication
+- **Single Device Policy:** The system enforces a strict "One Device Per Code" rule. If a code is used on a new device, the previous session is automatically terminated (Session Killing).
+- **JWT Authentication:** Secure stateless authentication using JSON Web Tokens.
+- **Role-Based Access Control (RBAC):**
+  - 🔴 **Master Admin:** Full control (Manage admins, delete data, view financials).
+  - 🟡 **Daily Admin:** Operational control (Generate codes, suspend users, view stats).
+- **Password Encryption:** Admins' passwords are hashed using `bcryptjs`.
 
-### ⚙️ Admin Dashboard Capabilities
-- **Code Generation Engine:** Bulk generate codes with specific durations (30, 90, 365 days).
-- **Live Monitoring:** Real-time tracking of active online sessions.
-- **Content Management:** Manage channels, categories, and stream providers (Xtream/M3U).
-- **User Control:** Ban codes, force logout, or delete users instantly.
+### 📦 Code Management
+- **Activation Codes:** Generate codes with specific durations (30, 90, 365 days).
+- **Status Tracking:** Auto-update status (`active`, `expired`, `banned`, `unused`).
+- **Heartbeat System:** Validate active sessions in real-time.
 
-### 📡 Streaming Logic
-- **HLS Support:** Optimized for `.m3u8` streaming.
-- **Dynamic Categories:** Auto-grouping of channels (Sports, Movies, Kids).
-- **Heartbeat System:** Frontend periodically validates session validity to ensure active subscription status.
+### 📺 Stream Management
+- **Channel Organization:** Manage channels, categories, and logos.
+- **Provider Integration:** Structure ready for Xtream/M3U providers.
+- **Hybrid Protection:** Allows both subscribed users and admins to preview streams.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Runtime:** [Node.js](https://nodejs.org/)
-- **Framework:** [Express.js](https://expressjs.com/)
-- **Database:** [MongoDB](https://www.mongodb.com/) (via Mongoose ODM)
-- **Security:** Helmet, CORS, Express-Rate-Limit, Bcrypt, JWT
-- **Logging:** Morgan
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** MongoDB (Mongoose ODM)
+- **Security:** Helmet, CORS, Bcrypt, JWT
+- **Deployment:** Railway (CI/CD connected to GitHub)
 
 ---
 
 ## 📂 Project Structure
 
-The project follows a scalable **MVC (Model-View-Controller)** architecture.
-
 ```bash
-alsaha-backend/
 ├── src/
 │   ├── config/             # DB connection & env setup
 │   ├── controllers/        # Business logic (Auth, Admin, Stream)
@@ -59,30 +60,9 @@ alsaha-backend/
 
 ---
 
-## ⚡ Getting Started
+## ⚙️ Environment Variables
 
-### 1. Prerequisites
-
-* Node.js (v14 or higher)
-* MongoDB (Local or Atlas)
-
-### 2. Installation
-
-```bash
-# Clone the repository
-git clone [https://github.com/Abdallayasseer/Alsahasport.git](https://github.com/Abdallayasseer/Alsahasport.git)
-
-# Navigate to directory
-cd Alsahasport
-
-# Install dependencies
-npm install
-
-```
-
-### 3. Environment Setup
-
-Create a `.env` file in the root directory:
+To run this project, you will need to add the following environment variables to your `.env` file:
 
 ```env
 PORT=5000
@@ -94,92 +74,78 @@ DAILY_ADMIN_USERNAME=staffusername
 DAILY_ADMIN_PASSWORD=staffPass
 NODE_ENV=development
 
-```
-
-### 4. Database Seeding (First Run Only)
-
-Since the system requires an Admin to generate codes, run this script to create the first Admin user:
-
-```bash
-# Creates admin user: username: 'admin', password: '123456'
-node seeder.js
-
-```
-
-### 5. Run the Server
-
-```bash
-# Development mode (with Nodemon)
-npm run dev
-
-# Production mode
-npm start
 
 ```
 
 ---
 
-## 📖 API Documentation
+## 🔌 API Endpoints Documentation
 
-### 🟢 Authentication (Public)
+### 1. Authentication (User)
 
-| Method | Endpoint | Description | Body Parameters |
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/auth/activate` | Activate a code & log in (Auto-locks device) |
+| `POST` | `/api/auth/validate` | Check if session is still valid (Heartbeat) |
+| `POST` | `/api/auth/logout` | Kill current session |
+
+### 2. Admin Management (RBAC)
+
+| Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/activate` | User Login | `{ "code": "ABC", "deviceId": "xyz" }` |
-| `POST` | `/api/admin/login` | Admin Login | `{ "username": "admin", "password": "..." }` |
+| `POST` | `/api/admin/login` | Public | Admin Login |
+| `POST` | `/api/admin/create` | **Master** | Create new admin (Staff) |
+| `DELETE` | `/api/admin/:id` | **Master** | Delete an admin |
+| `GET` | `/api/admin/profits` | **Master** | View financial stats |
 
-### 🔒 User Operations (Requires Token)
+### 3. Subscription Codes
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/api/auth/validate` | Heartbeat check (sent every 2 mins) |
-| `POST` | `/api/auth/logout` | End session manually |
-| `GET` | `/api/stream/channels` | Get all channels |
-| `GET` | `/api/stream/categories` | Get category list |
-| `GET` | `/api/stream/channel/:id` | Get stream URL for specific channel |
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/codes` | **Master/Daily** | Generate new codes |
+| `GET` | `/api/codes` | **Master/Daily** | List all codes |
+| `PATCH` | `/api/codes/:id/suspend` | **Master/Daily** | Ban/Suspend a code |
+| `DELETE` | `/api/codes/:id` | **Master** | Permanently delete code |
 
-### 🛡️ Admin Management (Requires Admin Token)
+### 4. Streaming Content
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/api/admin/codes` | Generate new activation code |
-| `GET` | `/api/admin/codes` | List all codes |
-| `DELETE` | `/api/admin/code/:id` | Delete a code |
-| `GET` | `/api/admin/sessions/live` | View currently active sessions |
-| `POST` | `/api/admin/channels` | Add a new channel |
-| `POST` | `/api/admin/provider` | Add Stream Provider (Xtream) |
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/stream/channels` | **User/Admin** | Get all channels |
+| `GET` | `/api/stream/categories` | **User/Admin** | Get categories |
+| `POST` | `/api/stream` | **Master** | Add new channel |
 
 ---
 
 ## 🛡️ Security Logic Explained
 
-### The "Single Device" Problem
+### The "Device Lock" Mechanism
 
-In IPTV, users often share codes, causing loss of revenue.
+When a user calls `/api/auth/activate`:
 
-### Our Solution
-
-1. **Login:** When a user enters a code, the backend checks the `Sessions` collection.
-2. **Conflict:** If a session exists for that code (even on another IP), it is **deleted**.
-3. **New Session:** A new session is created for the *current* device.
-4. **The Old User:** The old device sends a heartbeat (`/validate`) request. Since the session was deleted, the backend returns `401 Unauthorized`, and the frontend forces a logout.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+1. System checks if code is valid.
+2. Checks for any **existing active session** for this code in the `Sessions` collection.
+3. If found -> **Deletes the old session** (Kicking out the previous user).
+4. Creates a new session with the current `DeviceID` and `IP`.
+5. Returns a JWT token linked to this specific session ID.
 
 ---
 
-## 📝 License
+## 🚀 Deployment
 
-Distributed under the MIT License. See `LICENSE` for more information.
+The API is currently live on **Railway**:
+
+* **Base URL:** `https://alsahasport-production.up.railway.app/api`
 
 ---
 
-**Developed by Eng. Abdallah Yasser** *Full Stack Developer (Node.js & React)*
+## 👨‍💻 Author
+
+**Abdallah Yasser**
+
+* Full Stack Developer (MERN Stack)
+* [GitHub Profile](https://www.google.com/search?q=https://github.com/Abdallayasseer)
+
+---
+
+*© 2025 Alsahasport Backend System.*
