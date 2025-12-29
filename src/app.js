@@ -38,7 +38,23 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 
 // Data Sanitization against NoSQL query injection
-app.use(mongoSanitize());
+app.use((req, res, next) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  if (req.headers) req.headers = mongoSanitize.sanitize(req.headers);
+  if (req.query) {
+    const sanitizedQuery = mongoSanitize.sanitize(req.query);
+    if (req.query !== sanitizedQuery) {
+      Object.defineProperty(req, "query", {
+        value: sanitizedQuery,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+    }
+  }
+  next();
+});
 
 // Data Sanitization against XSS
 app.use(xss());
