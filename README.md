@@ -157,6 +157,9 @@ ADMIN_PASSWORD=your_secure_admin_password
 DAILY_ADMIN_USERNAME=dailyadmin
 DAILY_ADMIN_PASSWORD=your_secure_daily_password
 
+# Front End URl
+FRONTEND_URL=http://localhost:5000
+
 ```
 
 ---
