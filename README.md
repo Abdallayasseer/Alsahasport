@@ -146,7 +146,7 @@ DAILY_ADMIN_PASSWORD=your_secure_daily_password
 
 ### 👤 Client Authentication
 
-| Method | Endpoint | Description | Auth? |
+| Method | Endpoint | Description | Auth |
 | --- | --- | --- | --- |
 | `POST` | `/api/auth/activate` | Activate subscription code & get token. | ❌ |
 | `POST` | `/api/auth/validate` | Validate current session token. | ✅ |
@@ -154,7 +154,7 @@ DAILY_ADMIN_PASSWORD=your_secure_daily_password
 
 ### 🛠️ Admin Dashboard
 
-| Method | Endpoint | Description | Auth? |
+| Method | Endpoint | Description | Auth |
 | --- | --- | --- | --- |
 | `POST` | `/api/admin/login` | Admin login. | ❌ |
 | `POST` | `/api/admin/codes` | Create new subscription codes. | ✅ |
@@ -166,7 +166,7 @@ DAILY_ADMIN_PASSWORD=your_secure_daily_password
 
 ### 📺 Streaming
 
-| Method | Endpoint | Description | Auth? |
+| Method | Endpoint | Description | Auth |
 | --- | --- | --- | --- |
 | `GET` | `/api/stream/channels` | List all channels (filter by category). | ✅ |
 | `GET` | `/api/stream/categories` | List available categories. | ✅ |
@@ -197,7 +197,3 @@ This project is licensed under the **ISC License**.
 ---
 
 **Developed by Abdullah Yasser**
-
-```
-
-```
