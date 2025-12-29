@@ -110,7 +110,7 @@ alsahasport-backend/
 1. **Clone the repository**
 
 ```bash
-git clone [https://github.com/Abdallayasseer/Alsahasport.git](https://github.com/Abdallayasseer/Alsahasport.git)
+git clone https://github.com/Abdallayasseer/Alsahasport.git
 cd alsahasport-backend
 
 ```
