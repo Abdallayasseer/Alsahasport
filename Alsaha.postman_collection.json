@@ -125,7 +125,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"var jsonData = pm.response.json();",
+											"var jsonData = pm.response.json().data;",
 											"if (jsonData.token) {",
 											"    pm.collectionVariables.set(\"token\", jsonData.token);",
 											"    console.log(\"Admin Token updated successfully\");",
