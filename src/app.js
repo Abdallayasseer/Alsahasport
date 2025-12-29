@@ -56,10 +56,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/stream", streamRoutes);
 
-// Handle Unhandled Routes
-app.all("*", (req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-});
 
 // Global Error Handler
 app.use(globalErrorHandler);
