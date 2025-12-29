@@ -9,6 +9,7 @@ const {
   getLiveSessions,
   addProvider,
   loginAdmin,
+  displayCode,
 } = require("../controllers/admin.Controller");
 
 const {
@@ -26,7 +27,13 @@ router.post(
   "/codes",
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
   validateCreateCode,
+  validateCreateCode,
   createCode
+);
+router.get(
+  "/code/:id/display",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  displayCode
 );
 router.get("/codes", restrictTo("MASTER_ADMIN", "DAILY_ADMIN"), getAllCodes);
 router.delete("/code/:id", restrictTo("MASTER_ADMIN"), deleteCode);

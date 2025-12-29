@@ -1,4 +1,5 @@
 const express = require("express");
+require("dotenv").config();
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -16,7 +17,6 @@ const streamRoutes = require("./routes/stream.route");
 const AppError = require("./utils/AppError");
 const globalErrorHandler = require("./middlewares/error");
 
-require("dotenv").config();
 connectDB();
 
 const app = express();
@@ -73,6 +73,9 @@ if (process.env.NODE_ENV === "development") {
 
 // Global Rate Limiting
 app.use("/api", apiLimiter);
+
+// Output Sanitization (Security)
+app.use(require("./middlewares/responseSanitizer"));
 
 // Routes
 app.use("/api/auth", authRoutes);

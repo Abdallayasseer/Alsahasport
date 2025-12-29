@@ -9,31 +9,54 @@ const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 
 // Helper to Create & Send Tokens
-const createSessionAndSend = async (user, deviceId, ip, userAgent, res) => {
-  // 1. Generate Tokens
+exports.createSessionAndSend = async (
+  user,
+  deviceId,
+  ip,
+  userAgent,
+  res,
+  role = "user"
+) => {
+  // 1. Check & Enforce Single Session for ADMINS
+  if (role !== "user") {
+    // Find existing active sessions and revoke them (or just delete)
+    await Session.updateMany(
+      { userId: user._id, isRevoked: false },
+      { isRevoked: true }
+    );
+  }
+
+  // 2. Generate Tokens
   const refreshToken = generateRefreshToken();
   const refreshTokenHash = hashToken(refreshToken);
 
-  // 2. Create Session
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Days
+  // 3. Create Session
+  // Admin: 24h, User: 7 Days (or 14 days as per request "Refresh Token lifetime = 14 days")
+  // Request says "Refresh Token lifetime = 14 days". Let's stick to 14 days for user.
+  // "auto-expire admin sessions after 24h"
+  const sessionLife =
+    role === "user" ? 14 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + sessionLife);
 
   const newSession = await Session.create({
     userId: user._id,
+    userModel: role === "user" ? "ActivationCode" : "Admin",
+    role: role,
     refreshTokenHash,
-    deviceId,
+    deviceId: deviceId || "unknown",
     ipAddress: ip,
     userAgent,
     expiresAt,
   });
 
-  // 3. Convert to Access Token
+  // 4. Convert to Access Token
   const accessToken = signAccessToken({
     userId: user._id,
     sessionId: newSession._id,
-    role: "user",
+    role: role,
   });
 
-  // 4. Send Cookie
+  // 5. Send Cookie
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -41,14 +64,16 @@ const createSessionAndSend = async (user, deviceId, ip, userAgent, res) => {
     sameSite: "Strict",
   });
 
-  // 5. Response
+  // 6. Response
   res.status(200).json({
     status: "success",
     accessToken,
-    expiresAt: user.expiresAt, // subscription expiry
-    user: {
+    expiresAt: role === "user" ? user.expiresAt : undefined, // subscription expiry
+    data: {
       id: user._id,
-      role: "user",
+      username: user.username,
+      role: role,
+      sessionId: newSession._id,
     },
   });
 };
@@ -59,12 +84,13 @@ exports.completeLogin = catchAsync(async (req, res, next) => {
   const user = req.redeemedUser;
   const { deviceId } = req.body;
 
-  await createSessionAndSend(
+  await exports.createSessionAndSend(
     user,
     deviceId,
     req.ip,
     req.headers["user-agent"],
-    res
+    res,
+    "user"
   );
 });
 
@@ -91,13 +117,24 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
   }
 
   // 2. Check Validity
-  if (session.isRevoked || session.expiresAt < Date.now()) {
+  if (session.isRevoked) {
+    return next(new AppError("Session revoked", 401));
+  }
+  if (session.expiresAt < Date.now()) {
     return next(new AppError("Session expired", 401));
   }
 
-  // 3. User Check
-  // const user = await ActivationCode.findById(session.userId);
-  // if (!user) ...
+  // 3. User Check (Standardized)
+  let user;
+  if (session.role === "user") {
+    user = await ActivationCode.findById(session.userId);
+  } else {
+    user = await require("../models/Admin.model").findById(session.userId);
+  }
+  // If user deleted but session remains?
+  if (!user) {
+    return next(new AppError("User not found", 401));
+  }
 
   // 4. ROTATION
   // Invalidate OLD hash (effectively "consuming" the token)
@@ -107,9 +144,18 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
 
   session.refreshTokenHash = newHash;
   session.lastActive = Date.now();
-  // Extend session life? Or keep original login window?
-  // Usually extend on activity -> Sliding Window
-  session.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  // Extend session life? Not for Admins (Fixed 24h usually? Or sliding?)
+  // Prompt says "auto-expire admin sessions after 24h", usually implies absolute max?
+  // User says "Require refresh cycle to maintain session security", implying sliding window is fine OR strict rotation.
+  // We'll slide for User, maybe strict for Admin?
+  // Let's slide both for now to avoid UX issues unless strict max requested.
+  // "Access Token lifetime = 15 minutes", "Refresh Token lifetime = 14 days".
+
+  // Re-calculate expiry
+  const sessionLife =
+    session.role === "user" ? 14 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  session.expiresAt = new Date(Date.now() + sessionLife);
 
   await session.save();
 
@@ -117,7 +163,7 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
   const newAccessToken = signAccessToken({
     userId: session.userId,
     sessionId: session._id,
-    role: "user",
+    role: session.role || "user",
   });
 
   // 6. Send
@@ -131,6 +177,10 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     accessToken: newAccessToken,
+    data: {
+      role: session.role,
+      sessionId: session._id,
+    },
   });
 });
 

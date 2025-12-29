@@ -7,7 +7,12 @@ const jwt = require("jsonwebtoken");
  * @returns {string} hex hash
  */
 exports.hashToken = (token) => {
-  return crypto.createHash("sha256").update(token).digest("hex");
+  const secret = process.env.ACTIVATION_SECRET;
+  if (!secret) throw new Error("Server Error: Missing ACTIVATION_SECRET");
+  return crypto
+    .createHash("sha256")
+    .update(secret + token)
+    .digest("hex");
 };
 
 /**

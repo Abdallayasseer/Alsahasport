@@ -4,11 +4,22 @@ const sessionSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ActivationCode", // Or Admin, but primarly for Users
       required: true,
+      refPath: "userModel", // Dynamic Reference
       index: true,
     },
-    // We treat 'codeId' as 'userId' for normal users
+    userModel: {
+      type: String,
+      required: true,
+      enum: ["ActivationCode", "Admin"],
+      default: "ActivationCode",
+    },
+    role: {
+      type: String,
+      required: true,
+      enum: ["user", "MASTER_ADMIN", "DAILY_ADMIN"],
+      default: "user",
+    },
     refreshTokenHash: {
       type: String,
       required: true,
