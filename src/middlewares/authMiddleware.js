@@ -1,10 +1,11 @@
-const jwt = require("jsonwebtoken");
-const Admin = require("../models/Admin.model");
-const Session = require("../models/Session.model");
-const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const catchAsync = require("../utils/catchAsync");
+const { verifyToken } = require("../utils/tokenManager");
+const Session = require("../models/Session.model");
+const Admin = require("../models/Admin.model");
 
-exports.protectAdmin = catchAsync(async (req, res, next) => {
+exports.protect = catchAsync(async (req, res, next) => {
+  // 1) Get Token
   let token;
   if (
     req.headers.authorization &&
@@ -14,95 +15,66 @@ exports.protectAdmin = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
-    return next(
-      new AppError("You are not logged in! Please log in to get access.", 401)
-    );
+    return next(new AppError("Not authenticated", 401));
   }
 
-  // Verification
-  const decoded = await new Promise((resolve, reject) => {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) return reject(new AppError("Invalid Token", 401));
-      resolve(decoded);
-    });
-  });
+  // 2) Verify JWT
+  const decoded = await verifyToken(token);
 
-  // Check if user still exists
-  const currentAdmin = await Admin.findById(decoded.id);
-  if (!currentAdmin) {
-    return next(
-      new AppError(
-        "The user belonging to this token does no longer exist.",
-        401
-      )
-    );
+  // 3) Check if user exists & Role Logic
+  // The token payload contains { userId, sessionId, role }
+
+  if (decoded.role === "user") {
+    // 4) Check Session Validity (Critical for Users)
+    // Must hit DB to ensure session is not revoked
+    const session = await Session.findById(decoded.sessionId);
+
+    if (!session) {
+      return next(new AppError("Session expired or invalid", 401));
+    }
+
+    if (session.isRevoked) {
+      return next(new AppError("Session has been revoked", 401));
+    }
+
+    // Check manual expiry if needed, though Mongo TTL might handle it
+    if (session.expiresAt < Date.now()) {
+      return next(new AppError("Session expired", 401));
+    }
+
+    // Update Last Active (Async, don't await if performance critical, but good for tracking)
+    session.lastActive = Date.now();
+    session.save({ validateBeforeSave: false });
+
+    req.user = {
+      _id: decoded.userId,
+      role: decoded.role,
+      sessionId: decoded.sessionId,
+      deviceId: session.deviceId,
+    };
+  } else {
+    // Admin Logic (Sessionless or separate admin session logic)
+    // For now, assume Admins use standard JWTs without session binding or we bind them too.
+    // Instructions implied "Session" model stores `userId` (Users).
+    // If Admins need sessions, we'd act similarly.
+    // Current Admin system is stateless. I will keep it stateless unless asked,
+    // BUT I must ensure `req.user` is set correctly.
+
+    const admin = await Admin.findById(decoded.id || decoded.userId);
+    if (!admin) {
+      return next(new AppError("Admin no longer exists", 401));
+    }
+    // Check password changed? (omitted for brevity unless standard)
+    req.user = admin; // Admin model has .role
   }
 
-  // Grant Access
-  req.admin = currentAdmin;
   next();
-});
-
-exports.protectStreamOrAdmin = catchAsync(async (req, res, next) => {
-  let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  if (!token) {
-    return next(new AppError("No token provided", 401));
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // 1) If it's an Admin
-    if (decoded.id) {
-      const admin = await Admin.findById(decoded.id);
-      if (admin) {
-        req.userType = "admin";
-        req.admin = admin; // Attach admin for potential future use
-        return next();
-      }
-    }
-
-    // 2) If it's a User (Activation Code)
-    if (decoded.codeId) {
-      const activeSession = await Session.findOne({
-        codeId: decoded.codeId,
-        _id: decoded.sessionId,
-      });
-
-      if (!activeSession) {
-        return next(
-          new AppError("Session expired or active on another device", 401)
-        );
-      }
-
-      // Update last active
-      activeSession.lastActive = Date.now();
-      await activeSession.save();
-
-      req.codeId = decoded.codeId;
-      req.userType = "user";
-      return next();
-    }
-  } catch (err) {
-    return next(new AppError("Invalid or Expired Token", 401));
-  }
-
-  return next(new AppError("Not authorized", 401));
 });
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.admin || !roles.includes(req.admin.role)) {
-      return next(
-        new AppError("You do not have permission to perform this action", 403)
-      );
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError("Permission denied", 403));
     }
     next();
   };

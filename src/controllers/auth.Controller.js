@@ -1,106 +1,175 @@
-const ActivationCode = require("../models/ActivationCode.model");
 const Session = require("../models/Session.model");
-const jwt = require("jsonwebtoken");
-const sendResponse = require("../utils/responseHandler"); // We might want to deprecate this in favor of straight res.json, but let's keep it for now if it formats things nicely. Actually, let's standardize on standard responses. The previous one used sendResponse(res, status, success, msg, data). I'll stick to that or better, plain json since I have global error handler.
-// I'll stick to a standard response format manually or keep sendResponse if it's clean. Let's see sendResponse content? I didn't check it.
-// I'll assume standard json response is better for clarity.
+const ActivationCode = require("../models/ActivationCode.model"); // User Model
+const {
+  hashToken,
+  generateRefreshToken,
+  signAccessToken,
+} = require("../utils/tokenManager");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 
-const generateToken = (codeId, sessionId) => {
-  return jwt.sign({ codeId, sessionId }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+// Helper to Create & Send Tokens
+const createSessionAndSend = async (user, deviceId, ip, userAgent, res) => {
+  // 1. Generate Tokens
+  const refreshToken = generateRefreshToken();
+  const refreshTokenHash = hashToken(refreshToken);
+
+  // 2. Create Session
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Days
+
+  const newSession = await Session.create({
+    userId: user._id,
+    refreshTokenHash,
+    deviceId,
+    ipAddress: ip,
+    userAgent,
+    expiresAt,
+  });
+
+  // 3. Convert to Access Token
+  const accessToken = signAccessToken({
+    userId: user._id,
+    sessionId: newSession._id,
+    role: "user",
+  });
+
+  // 4. Send Cookie
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    expires: expiresAt,
+    sameSite: "Strict",
+  });
+
+  // 5. Response
+  res.status(200).json({
+    status: "success",
+    accessToken,
+    expiresAt: user.expiresAt, // subscription expiry
+    user: {
+      id: user._id,
+      role: "user",
+    },
   });
 };
 
-// @desc    User Login (Activate Code)
-// @route   POST /api/auth/activate
-exports.activateCode = catchAsync(async (req, res, next) => {
-  const { code, deviceId } = req.body;
+// Uses 'redemption.Controller' middleware to find/validate user first, then:
+exports.completeLogin = catchAsync(async (req, res, next) => {
+  // req.redeemedUser is set by previous middleware (redeemCodeAtomic)
+  const user = req.redeemedUser;
+  const { deviceId } = req.body;
 
-  // 1) Validate Input
-  if (!code || !deviceId) {
-    return next(new AppError("Please provide code and deviceId", 400));
+  await createSessionAndSend(
+    user,
+    deviceId,
+    req.ip,
+    req.headers["user-agent"],
+    res
+  );
+});
+
+exports.refreshToken = catchAsync(async (req, res, next) => {
+  const { refreshToken } = req.cookies; // Or body
+
+  if (!refreshToken) {
+    return next(new AppError("No token provided", 401));
   }
 
-  const ip = req.ip;
-  const userAgent = req.headers["user-agent"];
+  const hashedToken = hashToken(refreshToken);
 
-  // 2) Check if code exists
-  const codeDoc = await ActivationCode.findOne({ code });
-  if (!codeDoc) {
-    return next(new AppError("Invalid Code", 404));
+  // 1. Find Session by Hash
+  const session = await Session.findOne({
+    refreshTokenHash: hashedToken,
+  }).select("+refreshTokenHash");
+
+  if (!session) {
+    // DETECT REPLAY OF OLD TOKEN?
+    // If we can't find it, it might be rotated already.
+    // Advanced: Store "Family ID" to track reuse.
+    // Simple: Just fail.
+    return next(new AppError("Invalid Token", 401));
   }
 
-  // 3) Check status
-  if (codeDoc.status === "banned") {
-    return next(new AppError("Code is Banned", 403));
-  }
-  if (codeDoc.status === "expired") {
-    return next(new AppError("Code Expired", 403));
+  // 2. Check Validity
+  if (session.isRevoked || session.expiresAt < Date.now()) {
+    return next(new AppError("Session expired", 401));
   }
 
-  if (codeDoc.status === "active" && codeDoc.expiresAt < Date.now()) {
-    codeDoc.status = "expired";
-    await codeDoc.save();
-    return next(new AppError("Code Expired", 403));
-  }
+  // 3. User Check
+  // const user = await ActivationCode.findById(session.userId);
+  // if (!user) ...
 
-  // 4) Manage Session
-  const existingSession = await Session.findOne({ codeId: codeDoc._id });
-  if (existingSession) {
-    await Session.findByIdAndDelete(existingSession._id);
-  }
+  // 4. ROTATION
+  // Invalidate OLD hash (effectively "consuming" the token)
+  // Create NEW hash
+  const newRefreshToken = generateRefreshToken();
+  const newHash = hashToken(newRefreshToken);
 
-  if (codeDoc.status === "unused") {
-    codeDoc.status = "active";
-    codeDoc.firstActivatedAt = Date.now();
+  session.refreshTokenHash = newHash;
+  session.lastActive = Date.now();
+  // Extend session life? Or keep original login window?
+  // Usually extend on activity -> Sliding Window
+  session.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + codeDoc.durationDays);
-    codeDoc.expiresAt = expiry;
-    await codeDoc.save();
-  }
+  await session.save();
 
-  const newSession = await Session.create({
-    codeId: codeDoc._id,
-    ipAddress: ip,
-    userAgent: userAgent,
-    deviceId: deviceId,
+  // 5. Issue New Access Token
+  const newAccessToken = signAccessToken({
+    userId: session.userId,
+    sessionId: session._id,
+    role: "user",
   });
 
-  const token = generateToken(codeDoc._id, newSession._id);
+  // 6. Send
+  res.cookie("refreshToken", newRefreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    expires: session.expiresAt,
+    sameSite: "Strict",
+  });
 
   res.status(200).json({
-    success: true,
-    message: "Activated Successfully",
-    data: {
-      token,
-      expiresAt: codeDoc.expiresAt,
-      daysLeft: Math.ceil(
-        (codeDoc.expiresAt - Date.now()) / (1000 * 60 * 60 * 24)
-      ),
-    },
+    status: "success",
+    accessToken: newAccessToken,
   });
 });
 
-// @desc    Logout
-// @route   POST /api/auth/logout
 exports.logout = catchAsync(async (req, res, next) => {
-  if (req.codeId) {
-    await Session.findOneAndDelete({ codeId: req.codeId });
+  // Revoke current session
+  if (req.user && req.user.sessionId) {
+    await Session.findByIdAndUpdate(req.user.sessionId, { isRevoked: true });
   }
-  res.status(200).json({
-    success: true,
-    message: "Logged out successfully",
+
+  res.cookie("refreshToken", "loggedout", {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
   });
+
+  res.status(200).json({ status: "success" });
 });
 
-// @desc    Validate Session (Heartbeat)
-// @route   POST /api/auth/validate
+exports.logoutAll = catchAsync(async (req, res, next) => {
+  await Session.updateMany(
+    { userId: req.user._id, isRevoked: false },
+    { isRevoked: true }
+  );
+  res
+    .status(200)
+    .json({ status: "success", message: "All devices logged out" });
+});
+
+// Legacy/Compatibility exports if needed
+// Legacy/Compatibility exports if needed
+exports.activateCode = exports.completeLogin; // Placeholder, Route will chain middleware
+
 exports.validateSession = catchAsync(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Session Valid",
+    data: {
+      userId: req.user._id,
+      sessionId: req.user.sessionId,
+      role: req.user.role,
+    },
   });
 });

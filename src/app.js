@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
 
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
@@ -36,14 +37,17 @@ app.use(
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: "10kb" }));
+app.use(cookieParser()); // Parsing cookies for Refresh Tokens
 
 // Data Sanitization against NoSQL query injection
+// Note: Manual implementation to handle Express 5 req.query getter
 app.use((req, res, next) => {
   if (req.body) req.body = mongoSanitize.sanitize(req.body);
   if (req.params) req.params = mongoSanitize.sanitize(req.params);
   if (req.headers) req.headers = mongoSanitize.sanitize(req.headers);
   if (req.query) {
     const sanitizedQuery = mongoSanitize.sanitize(req.query);
+    // Explicitly handle read-only query property in Express 5
     if (req.query !== sanitizedQuery) {
       Object.defineProperty(req, "query", {
         value: sanitizedQuery,

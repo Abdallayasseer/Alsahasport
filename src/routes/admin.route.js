@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protectAdmin, restrictTo } = require("../middlewares/authMiddleware");
+const { protect, restrictTo } = require("../middlewares/authMiddleware");
 const {
   createCode,
   addChannel,
@@ -20,7 +20,7 @@ const { authLimiter } = require("../middlewares/rateLimiters");
 
 router.post("/login", authLimiter, validateLogin, loginAdmin);
 
-router.use(protectAdmin);
+router.use(protect);
 
 router.post(
   "/codes",

@@ -2,13 +2,18 @@ const mongoose = require("mongoose");
 
 const activationCodeSchema = new mongoose.Schema(
   {
-    code: {
+    codeHash: {
       type: String,
       required: true,
       unique: true,
-      uppercase: true,
-      trim: true,
       index: true,
+    },
+    // Retaining 'code' ONLY for backward compatibility or display if needed,
+    // but in a real secure system we remove it.
+    // For this refactor, we will rely on codeHash for auth.
+    code: {
+      type: String,
+      select: false,
     },
     durationDays: {
       type: Number,
@@ -27,7 +32,7 @@ const activationCodeSchema = new mongoose.Schema(
     },
     maxDevices: {
       type: Number,
-      default: 1, 
+      default: 1,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

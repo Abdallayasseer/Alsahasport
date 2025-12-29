@@ -6,11 +6,11 @@ const {
   getCategories,
   getChannelStream,
 } = require("../controllers/stream.Controller");
-const { protectStreamOrAdmin, restrictTo } = require('../middlewares/authMiddleware');
-router.use(protectStreamOrAdmin); 
+const { protect, restrictTo } = require("../middlewares/authMiddleware");
+router.use(protect);
 
-router.get("/channels", getChannels); 
-router.get("/categories", getCategories); 
-router.get("/channel/:id", getChannelStream); 
+router.get("/channels", getChannels);
+router.get("/categories", getCategories);
+router.get("/channel/:id", getChannelStream);
 
 module.exports = router;

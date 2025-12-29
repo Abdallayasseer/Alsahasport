@@ -2,22 +2,40 @@ const mongoose = require("mongoose");
 
 const sessionSchema = new mongoose.Schema(
   {
-    codeId: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ActivationCode",
+      ref: "ActivationCode", // Or Admin, but primarly for Users
       required: true,
+      index: true,
     },
-    ipAddress: String,
+    // We treat 'codeId' as 'userId' for normal users
+    refreshTokenHash: {
+      type: String,
+      required: true,
+      select: false,
+    },
+    isRevoked: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     userAgent: String,
-    deviceId: String,
+    ipAddress: String,
+    deviceId: { type: String, required: true },
     lastActive: {
       type: Date,
       default: Date.now,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: { expireAfterSeconds: 0 }, // TTL Index
     },
   },
   { timestamps: true }
 );
 
-sessionSchema.index({ lastActive: 1 }, { expireAfterSeconds: 7200 });
+// Compound index for fast lookup of a user's specific device session
+sessionSchema.index({ userId: 1, deviceId: 1 });
 
 module.exports = mongoose.model("Session", sessionSchema);

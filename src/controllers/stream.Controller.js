@@ -45,13 +45,38 @@ exports.getChannelStream = catchAsync(async (req, res, next) => {
     return next(new AppError("Channel not found or inactive", 404));
   }
 
+  // SIGNED URL GENERATION
+  // Assuming the stream server expects path + expires + IP + secret
+  // For this generic implementation, we will append a signature
+  const secret = process.env.STREAM_SECRET || "super_secret_stream_key";
+  const expires = Math.floor(Date.now() / 1000) + 3600; // 1 hour validity
+  const userIp = req.ip;
+  const sessionId = req.user.sessionId ? req.user.sessionId.toString() : "";
+
+  // Data to sign: url + expiry + ip + session (binds URL to specific user session/IP)
+  const dataToSign = `${channel.streamUrl}:${expires}:${userIp}:${sessionId}`;
+
+  const crypto = require("crypto");
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(dataToSign)
+    .digest("hex");
+
+  // Append to URL (naive append, usually depends on provider e.g. Flussonic, Wowza, Nginx)
+  // We will assume a standard ?token= format or similar.
+  // Let's use a generic 'token' param containing the signature and metadata
+  const cleanUrl = channel.streamUrl;
+  const separator = cleanUrl.includes("?") ? "&" : "?";
+  const signedUrl = `${cleanUrl}${separator}expires=${expires}&signature=${signature}&session=${sessionId}`;
+
   res.status(200).json({
     success: true,
     message: "Stream ready",
     data: {
       name: channel.name,
-      url: channel.streamUrl,
+      url: signedUrl,
       logo: channel.logoUrl,
+      expiresAt: expires,
     },
   });
 });

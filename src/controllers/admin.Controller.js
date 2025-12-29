@@ -9,8 +9,8 @@ const bcrypt = require("bcryptjs");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 
-const generateAdminToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+const generateAdminToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
 exports.loginAdmin = catchAsync(async (req, res, next) => {
@@ -26,7 +26,7 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid username or password", 401));
   }
 
-  const token = generateAdminToken(admin._id);
+  const token = generateAdminToken(admin._id, admin.role);
   admin.password = undefined;
 
   res.status(200).json({
@@ -42,23 +42,30 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
 });
 
 exports.createCode = catchAsync(async (req, res, next) => {
-  const { durationDays } = req.body; // 30, 90, 365
+  const { durationDays, maxDevices } = req.body;
 
   if (!durationDays) {
     return next(new AppError("Please provide durationDays", 400));
   }
 
-  const code = crypto.randomBytes(6).toString("hex").toUpperCase();
+  const codeRaw = crypto.randomBytes(6).toString("hex").toUpperCase();
+  // Hash it
+  const codeHash = crypto.createHash("sha256").update(codeRaw).digest("hex");
 
   const newCode = await ActivationCode.create({
-    code,
+    codeHash,
+    // We do NOT store 'code' in plaintext anymore for security
     durationDays,
+    maxDevices: maxDevices || 1,
   });
 
   res.status(201).json({
     success: true,
     message: "Code Created",
-    data: newCode,
+    data: {
+      ...newCode.toObject(),
+      code: codeRaw, // Send back once!
+    },
   });
 });
 
