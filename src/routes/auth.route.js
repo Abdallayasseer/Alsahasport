@@ -9,7 +9,10 @@ const {
 
 const { protectStreamOrAdmin } = require("../middlewares/authMiddleware");
 
-router.post("/activate", activateCode);
+const { validateActivate } = require("../middlewares/validate");
+const { authLimiter } = require("../middlewares/rateLimiters");
+
+router.post("/activate", authLimiter, validateActivate, activateCode);
 router.post("/validate", protectStreamOrAdmin, validateSession);
 router.post("/logout", protectStreamOrAdmin, logout);
 

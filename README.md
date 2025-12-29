@@ -1,103 +1,203 @@
-# AlsahaSport Backend API
+# 📺 AlsahaSport Backend API
 
-A robust Node.js/Express backend service for the AlsahaSport streaming platform. This system manages authentication, subscription codes, live stream sessions, and admin controls.
+![Node.js](https://img.shields.io/badge/Node.js-v14%2B-green?style=flat&logo=node.js)
+![Express.js](https://img.shields.io/badge/Express.js-4.x-lightgrey?style=flat&logo=express)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat&logo=mongodb)
+![License](https://img.shields.io/badge/License-ISC-blue?style=flat)
+
+> A robust, high-performance backend service engineered for the **AlsahaSport** streaming platform.
+
+This system facilitates secure streaming sessions, manages subscription codes with expiration logic, provides real-time user monitoring, and offers a comprehensive administration dashboard.
+
+---
+
+## 📑 Table of Contents
+- [Features](#-features)
+- [Architecture & Tech Stack](#-architecture--tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-configuration)
+- [API Documentation](#-api-endpoints)
+- [Testing & Postman](#-testing-with-postman)
+- [License](#-license)
+
+---
 
 ## 🚀 Features
 
-- **Authentication**: Secure JWT-based authentication for both Clients and Admins.
-- **Code Management**: Generate, retrieve, and delete subscription codes.
-- **Streaming Handlers**: API endpoints to fetch channels, categories, and secure stream URLs.
-- **Session Monitoring**: Real-time tracking of live user sessions.
-- **Admin Dashboard**: Comprehensive API for managing content and users.
-- **Security**: Implements Rate Limiting, Helmet headers, and Mongo Sanitization.
+### 🔐 Security & Auth
+* **JWT Authentication:** Stateless, secure authentication for both Clients and Admins.
+* **Protection:** Implements `Helmet` for header security and `Mongo-Sanitize` against injection attacks.
+* **Rate Limiting:** Prevents brute-force attacks and abuse.
 
-## 🛠️ Tech Stack
+### 📡 Streaming & Content
+* **Dynamic Channels:** API endpoints to fetch channels categorized by genre.
+* **Secure Links:** Delivers protected stream URLs to authenticated clients.
+* **Provider Management:** Manage different stream sources seamlessly.
 
-- **Runtime**: [Node.js](https://nodejs.org/)
-- **Framework**: [Express.js](https://expressjs.com/)
-- **Database**: [MongoDB](https://www.mongodb.com/) (with Mongoose)
-- **Authentication**: JSON Web Token (JWT)
-- **Security**: `helmet`, `express-rate-limit`, `mongo-sanitize`, `bcryptjs`
-- **Logging**: `morgan` (in development)
+### 🕹️ Administration
+* **Code System:** Generate, track, and revoke subscription codes.
+* **Live Monitoring:** **Real-time** tracking of active user sessions.
+* **Dashboard API:** Full control over content and users.
 
-## ⚙️ Installation & Setup
+---
+
+## 🛠 Architecture & Tech Stack
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Runtime** | Node.js | JavaScript runtime built on Chrome's V8 engine. |
+| **Framework** | Express.js | Fast, unopinionated, minimalist web framework. |
+| **Database** | MongoDB | NoSQL database with **Mongoose** ODM. |
+| **Auth** | JWT | JSON Web Tokens for stateless authentication. |
+| **Security** | BcryptJS | Password hashing. |
+| **Logging** | Morgan | HTTP request logger middleware. |
+
+---
+
+## 📂 Project Structure
+
+```bash
+alsahasport-backend/
+├── src/
+│   ├── config/         # Database and Env configurations
+│   ├── controllers/    # Request logic (Auth, Stream, Admin)
+│   ├── models/         # Mongoose Schemas (User, Code, Channel)
+│   ├── routes/         # API Routes definitions
+│   ├── middleware/     # Auth checks, Error handling
+│   └── utils/          # Helper functions
+├── .env.example        # Environment variables template
+├── server.js           # Entry point
+└── package.json        # Dependencies
+
+```
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+
+* Node.js (v14 or higher)
+* MongoDB (Local or Atlas URL)
+* Git
+
+### Installation
 
 1. **Clone the repository**
+```bash
+git clone [https://github.com/Abdallayasseer/Alsahasport.git](https://github.com/Abdallayasseer/Alsahasport.git)
+cd alsahasport-backend
 
-   ```bash
-   git clone <repository_url>
-   cd alsahasport-backend
-   ```
+```
+
 
 2. **Install Dependencies**
+```bash
+npm install
 
-   ```bash
-   npm install
-   ```
+```
 
-3. **Environment Configuration**
-   Create a `.env` file in the root directory with the following variables:
 
-   ```env
-   PORT=5000
-   NODE_ENV=development
-   DATABASE_URL=mongodb://localhost:27017/alsahasport
-   JWT_SECRET=your_super_secret_jwt_key
-   JWT_EXPIRES_IN=30d
-   LOGIN_PASSWORD=securepassword # For simple admin login if used
-   ```
+3. **Run the Server**
+```bash
+# Development Mode (with nodemon)
+npm run dev
 
-4. **Start the Server**
-   - Development Mode:
-     ```bash
-     npm run dev
-     ```
-   - Production Mode:
-     ```bash
-     npm start
-     ```
+# Production Mode
+npm start
+
+```
+
+
+
+---
+
+## 🔐 Environment Configuration
+
+Create a `.env` file in the root directory. You can use the reference below:
+
+```ini
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# Database Configuration
+# Replace with your MongoDB connection string (e.g., MongoDB Atlas or Local)
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/alsahasport
+
+# Security & Authentication
+# Use a long, random string for JWT signing
+JWT_SECRET=your_jwt_secret_key_here
+
+# Primary Administrator Credentials
+ADMIN_USERNAME=alsahasportadmin
+ADMIN_PASSWORD=your_secure_admin_password
+
+# Daily Administrator Credentials
+DAILY_ADMIN_USERNAME=dailyadmin
+DAILY_ADMIN_PASSWORD=your_secure_daily_password
+
+```
+
+---
 
 ## 📚 API Endpoints
 
-### Auth (Client)
+### 👤 Client Authentication
 
-| Method | Endpoint             | Description                                       | Auth Required |
-| :----- | :------------------- | :------------------------------------------------ | :------------ |
-| `POST` | `/api/auth/activate` | Activate a subscription code and receive a token. | No            |
-| `POST` | `/api/auth/validate` | Validate the current session token.               | Yes           |
-| `POST` | `/api/auth/logout`   | Logout the current user/device.                   | Yes           |
+| Method | Endpoint | Description | Auth? |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/activate` | Activate subscription code & get token. | ❌ |
+| `POST` | `/api/auth/validate` | Validate current session token. | ✅ |
+| `POST` | `/api/auth/logout` | Terminate session. | ✅ |
 
-### Admin
+### 🛠️ Admin Dashboard
 
-| Method   | Endpoint                   | Description                            | Auth Required      |
-| :------- | :------------------------- | :------------------------------------- | :----------------- |
-| `POST`   | `/api/admin/login`         | Admin login to receive an admin token. | No                 |
-| `POST`   | `/api/admin/codes`         | Create new subscription codes.         | Yes (Master/Daily) |
-| `GET`    | `/api/admin/codes`         | Retrieve all subscription codes.       | Yes (Master/Daily) |
-| `DELETE` | `/api/admin/code/:id`      | Delete a subscription code.            | Yes (Master)       |
-| `GET`    | `/api/admin/sessions/live` | View currently active live sessions.   | Yes (Master)       |
-| `POST`   | `/api/admin/channels`      | Add a new TV channel.                  | Yes (Master)       |
-| `POST`   | `/api/admin/provider`      | Add a new stream provider.             | Yes (Master)       |
+| Method | Endpoint | Description | Auth? |
+| --- | --- | --- | --- |
+| `POST` | `/api/admin/login` | Admin login. | ❌ |
+| `POST` | `/api/admin/codes` | Create new subscription codes. | ✅ |
+| `GET` | `/api/admin/codes` | Retrieve all codes. | ✅ |
+| `DELETE` | `/api/admin/code/:id` | Delete a code. | ✅ |
+| `GET` | `/api/admin/sessions/live` | **Monitor live active users.** | ✅ |
+| `POST` | `/api/admin/channels` | Add TV channel. | ✅ |
+| `POST` | `/api/admin/provider` | Add stream provider. | ✅ |
 
-### Stream
+### 📺 Streaming
 
-| Method | Endpoint                  | Description                                                 | Auth Required |
-| :----- | :------------------------ | :---------------------------------------------------------- | :------------ |
-| `GET`  | `/api/stream/channels`    | Get list of available channels (optional `category` query). | Yes           |
-| `GET`  | `/api/stream/categories`  | Get list of available stream categories.                    | Yes           |
-| `GET`  | `/api/stream/channel/:id` | Get secure stream URL for a specific channel.               | Yes           |
+| Method | Endpoint | Description | Auth? |
+| --- | --- | --- | --- |
+| `GET` | `/api/stream/channels` | List all channels (filter by category). | ✅ |
+| `GET` | `/api/stream/categories` | List available categories. | ✅ |
+| `GET` | `/api/stream/channel/:id` | Get secure stream URL. | ✅ |
+
+---
 
 ## 🧪 Testing with Postman
 
-An automated Postman collection is included (`Alsaha.postman_collection.json`).
+A fully automated Postman collection is included in this repository: `Alsaha.postman_collection.json`.
+
+### How to use:
 
 1. Import the collection into Postman.
-2. Select the "Alsaha System" collection.
-3. The collection is configured to use the variable `{{base_url}}`. Default is `http://localhost:5000/api`.
-4. **Automation**:
-   - When you request **Auth > Activate Code** or **Admin > Admin Login**, the response token is automatically saved to the `{{token}}` collection variable.
-   - Subsequent authenticated requests will automatically use this token.
+2. Ensure the environment variable `{{base_url}}` is set to `http://localhost:5000/api`.
+
+### 🤖 Automation Features:
+
+* **Auto-Token Injection:** When you run the **Activate Code** or **Admin Login** request, the system automatically captures the `token` from the response and saves it to the Collection Variables.
+* **No Copy-Paste Needed:** All subsequent requests (like getting channels) will automatically use the saved token.
+
+---
 
 ## 📄 License
 
-This project is licensed under the ISC License.
+This project is licensed under the **ISC License**.
+
+---
+
+**Developed by Abdullah Yasser**
+
+```
+
+```
