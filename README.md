@@ -1,153 +1,103 @@
-# 🏆 Alsahasport Backend API
+# AlsahaSport Backend API
 
-![Node.js](https://img.shields.io/badge/Node.js-V22-green?style=for-the-badge&logo=node.js)
-![Express.js](https://img.shields.io/badge/Express.js-4.x-black?style=for-the-badge&logo=express)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)
-![Railway](https://img.shields.io/badge/Deployed%20on-Railway-purple?style=for-the-badge&logo=railway)
+A robust Node.js/Express backend service for the AlsahaSport streaming platform. This system manages authentication, subscription codes, live stream sessions, and admin controls.
 
-## Overview
+## 🚀 Features
 
-AlsahaSport is a robust, production-grade IPTV/Streaming backend system built with Node.js and MongoDB. It manages activation codes, live user sessions, and secure stream delivery with a focus on high-performance and strict security.
+- **Authentication**: Secure JWT-based authentication for both Clients and Admins.
+- **Code Management**: Generate, retrieve, and delete subscription codes.
+- **Streaming Handlers**: API endpoints to fetch channels, categories, and secure stream URLs.
+- **Session Monitoring**: Real-time tracking of live user sessions.
+- **Admin Dashboard**: Comprehensive API for managing content and users.
+- **Security**: Implements Rate Limiting, Helmet headers, and Mongo Sanitization.
 
-The system features a dual-authentication mechanism:
+## 🛠️ Tech Stack
 
-1.  **Admin Portal**: Secure JWT-based access for system administrators (rbac: MASTER_ADMIN, DAILY_ADMIN).
-2.  **Streaming Clients**: Code-based activation system where users enter a purchased code to gain access for a specific duration (30/90/365 days).
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Framework**: [Express.js](https://expressjs.com/)
+- **Database**: [MongoDB](https://www.mongodb.com/) (with Mongoose)
+- **Authentication**: JSON Web Token (JWT)
+- **Security**: `helmet`, `express-rate-limit`, `mongo-sanitize`, `bcryptjs`
+- **Logging**: `morgan` (in development)
 
-## Key Features
+## ⚙️ Installation & Setup
 
-- **Secure Authentication**: JWT-based auth with secure headers (Helmet), Rate Limiting, and CORS protection.
-- **Role-Based Access Control (RBAC)**: Granular permissions for Master and Daily admins.
-- **Activation System**: Logic to handle code usage, expiration, bans, and device locking (1 session per code).
-- **Session Management**: Real-time tracking of live sessions to prevent account sharing.
-- **Stream Management**: Categorized channel lists and secure stream URL delivery.
-- **Security**: NoSQL injection protection, Centralized Error Handling, and Input Sanitization.
+1. **Clone the repository**
 
----
+   ```bash
+   git clone <repository_url>
+   cd alsahasport-backend
+   ```
 
-## 🏗 System Architecture
+2. **Install Dependencies**
 
-### Tech Stack
+   ```bash
+   npm install
+   ```
 
-- **Runtime**: Node.js (v20+)
-- **Framework**: Express.js
-- **Database**: MongoDB (Mongoose ODM)
-- **Security**: Helmet, CORS, RateLimit, Bcrypt, JWT, MongoSanitize
-- **Logging**: Morgan (Dev mode)
+3. **Environment Configuration**
+   Create a `.env` file in the root directory with the following variables:
 
-### Folder Structure
+   ```env
+   PORT=5000
+   NODE_ENV=development
+   DATABASE_URL=mongodb://localhost:27017/alsahasport
+   JWT_SECRET=your_super_secret_jwt_key
+   JWT_EXPIRES_IN=30d
+   LOGIN_PASSWORD=securepassword # For simple admin login if used
+   ```
 
-```
-src/
-├── config/         # Database connection
-├── controllers/    # Request handlers (Admin, Auth, Stream)
-├── middlewares/    # Auth, Error Handling, Validation
-├── models/         # Mongoose Schemas (Admin, Channel, Code, Session)
-├── routes/         # API Routes definition
-├── utils/          # Helpers (AppError, catchAsync)
-└── app.js          # Express App setup & Global Middleware
-```
+4. **Start the Server**
+   - Development Mode:
+     ```bash
+     npm run dev
+     ```
+   - Production Mode:
+     ```bash
+     npm start
+     ```
 
----
+## 📚 API Endpoints
 
-## 🛡 Admin Roles & Permissions
+### Auth (Client)
 
-| Feature                     | MASTER_ADMIN | DAILY_ADMIN |
-| :-------------------------- | :----------: | :---------: |
-| **Login**                   |      ✅      |     ✅      |
-| **View Live Sessions**      |      ✅      |     ❌      |
-| **Create Activation Codes** |      ✅      |     ✅      |
-| **View All Codes**          |      ✅      |     ✅      |
-| **Delete Code**             |      ✅      |     ❌      |
-| **Add Channel**             |      ✅      |     ❌      |
-| **Add Stream Provider**     |      ✅      |     ❌      |
+| Method | Endpoint             | Description                                       | Auth Required |
+| :----- | :------------------- | :------------------------------------------------ | :------------ |
+| `POST` | `/api/auth/activate` | Activate a subscription code and receive a token. | No            |
+| `POST` | `/api/auth/validate` | Validate the current session token.               | Yes           |
+| `POST` | `/api/auth/logout`   | Logout the current user/device.                   | Yes           |
 
----
+### Admin
 
-## 🔐 API Overview
+| Method   | Endpoint                   | Description                            | Auth Required      |
+| :------- | :------------------------- | :------------------------------------- | :----------------- |
+| `POST`   | `/api/admin/login`         | Admin login to receive an admin token. | No                 |
+| `POST`   | `/api/admin/codes`         | Create new subscription codes.         | Yes (Master/Daily) |
+| `GET`    | `/api/admin/codes`         | Retrieve all subscription codes.       | Yes (Master/Daily) |
+| `DELETE` | `/api/admin/code/:id`      | Delete a subscription code.            | Yes (Master)       |
+| `GET`    | `/api/admin/sessions/live` | View currently active live sessions.   | Yes (Master)       |
+| `POST`   | `/api/admin/channels`      | Add a new TV channel.                  | Yes (Master)       |
+| `POST`   | `/api/admin/provider`      | Add a new stream provider.             | Yes (Master)       |
 
-### 1. Authentication (User/Streamer)
+### Stream
 
-- `POST /api/auth/activate`: Activate a code to get a session token. Checks expiry/ban status.
-- `POST /api/auth/validate`: Heartbeat to keep session alive.
-- `POST /api/auth/logout`: End session.
+| Method | Endpoint                  | Description                                                 | Auth Required |
+| :----- | :------------------------ | :---------------------------------------------------------- | :------------ |
+| `GET`  | `/api/stream/channels`    | Get list of available channels (optional `category` query). | Yes           |
+| `GET`  | `/api/stream/categories`  | Get list of available stream categories.                    | Yes           |
+| `GET`  | `/api/stream/channel/:id` | Get secure stream URL for a specific channel.               | Yes           |
 
-### 2. Admin Management
+## 🧪 Testing with Postman
 
-- `POST /api/admin/login`: Admin login.
-- `POST /api/admin/codes`: Create new activation codes.
-- `GET /api/admin/codes`: List all codes.
-- `DELETE /api/admin/code/:id`: Remove a code (Master Only).
-- `GET /api/admin/sessions/live`: View active user sessions (Master Only).
-- `POST /api/admin/channels`: Add new channels (Master Only).
+An automated Postman collection is included (`Alsaha.postman_collection.json`).
 
-### 3. Streaming (Protected)
-
-- `GET /api/stream/channels`: Get list of active channels.
-- `GET /api/stream/categories`: Get distinct categories.
-- `GET /api/stream/channel/:id`: Get secure stream URL for a channel.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js & npm
-- MongoDB (Local or Atlas)
-
-### Installation
-
-1.  **Clone the repository**
-
-    ```bash
-    git clone https://github.com/alsahasport/backend.git
-    cd backend
-    ```
-
-2.  **Install Dependencies**
-
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Configuration**
-    Create a `.env` file in the root directory:
-
-    ```env
-    NODE_ENV=development
-    PORT=5000
-    MONGO_URI=mongodb://localhost:27017/alsahasport
-    JWT_SECRET=your_super_secret_jwt_key_should_be_long
-    ```
-
-4.  **Run the Server**
-
-    ```bash
-    # Development Mode (Nodemon)
-    npm run dev
-
-    # Production Mode
-    npm start
-    ```
-
----
-
-## 🧪 Postman Usage
-
-A complete Postman collection is included as `Alsaha_Full_System.postman_collection.json`.
-
-1.  Import the JSON file into Postman.
-2.  The collection uses **Variables**:
-    - `{{base_url}}`: Defaults to `http://localhost:5000/api`
-    - `{{token}}`: Automatically set this after Login/Activate requests if you use scripts, or manually copy the Bearer token.
-3.  **To Test Admin Flow**:
-    - Login as Admin -> Copy `token` -> Paste in Authorization tab of Admin requests.
-4.  **To Test User Flow**:
-    - Activate Code -> Copy `token` -> Paste in Authorization tab of Stream requests.
-
----
+1. Import the collection into Postman.
+2. Select the "Alsaha System" collection.
+3. The collection is configured to use the variable `{{base_url}}`. Default is `http://localhost:5000/api`.
+4. **Automation**:
+   - When you request **Auth > Activate Code** or **Admin > Admin Login**, the response token is automatically saved to the `{{token}}` collection variable.
+   - Subsequent authenticated requests will automatically use this token.
 
 ## 📄 License
 
-Private Property of AlsahaSport. Unauthorized copying or distribution is strictly prohibited.
+This project is licensed under the ISC License.
