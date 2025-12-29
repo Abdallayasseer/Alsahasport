@@ -5,146 +5,149 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)
 ![Railway](https://img.shields.io/badge/Deployed%20on-Railway-purple?style=for-the-badge&logo=railway)
 
-**Alsahasport** is a robust, high-performance RESTful API designed to manage a sports streaming platform. It features a secure subscription system based on activation codes with strict **Single-Device Session Locking** and a tiered **Role-Based Access Control (RBAC)** system for administration.
+## Overview
+
+AlsahaSport is a robust, production-grade IPTV/Streaming backend system built with Node.js and MongoDB. It manages activation codes, live user sessions, and secure stream delivery with a focus on high-performance and strict security.
+
+The system features a dual-authentication mechanism:
+
+1.  **Admin Portal**: Secure JWT-based access for system administrators (rbac: MASTER_ADMIN, DAILY_ADMIN).
+2.  **Streaming Clients**: Code-based activation system where users enter a purchased code to gain access for a specific duration (30/90/365 days).
+
+## Key Features
+
+- **Secure Authentication**: JWT-based auth with secure headers (Helmet), Rate Limiting, and CORS protection.
+- **Role-Based Access Control (RBAC)**: Granular permissions for Master and Daily admins.
+- **Activation System**: Logic to handle code usage, expiration, bans, and device locking (1 session per code).
+- **Session Management**: Real-time tracking of live sessions to prevent account sharing.
+- **Stream Management**: Categorized channel lists and secure stream URL delivery.
+- **Security**: NoSQL injection protection, Centralized Error Handling, and Input Sanitization.
 
 ---
 
-## 🚀 Key Features
+## 🏗 System Architecture
 
-### 🔐 Security & Authentication
-- **Single Device Policy:** The system enforces a strict "One Device Per Code" rule. If a code is used on a new device, the previous session is automatically terminated (Session Killing).
-- **JWT Authentication:** Secure stateless authentication using JSON Web Tokens.
-- **Role-Based Access Control (RBAC):**
-  - 🔴 **Master Admin:** Full control (Manage admins, delete data, view financials).
-  - 🟡 **Daily Admin:** Operational control (Generate codes, suspend users, view stats).
-- **Password Encryption:** Admins' passwords are hashed using `bcryptjs`.
+### Tech Stack
 
-### 📦 Code Management
-- **Activation Codes:** Generate codes with specific durations (30, 90, 365 days).
-- **Status Tracking:** Auto-update status (`active`, `expired`, `banned`, `unused`).
-- **Heartbeat System:** Validate active sessions in real-time.
+- **Runtime**: Node.js (v20+)
+- **Framework**: Express.js
+- **Database**: MongoDB (Mongoose ODM)
+- **Security**: Helmet, CORS, RateLimit, Bcrypt, JWT, MongoSanitize
+- **Logging**: Morgan (Dev mode)
 
-### 📺 Stream Management
-- **Channel Organization:** Manage channels, categories, and logos.
-- **Provider Integration:** Structure ready for Xtream/M3U providers.
-- **Hybrid Protection:** Allows both subscribed users and admins to preview streams.
+### Folder Structure
 
----
-
-## 🛠️ Tech Stack
-
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** MongoDB (Mongoose ODM)
-- **Security:** Helmet, CORS, Bcrypt, JWT
-- **Deployment:** Railway (CI/CD connected to GitHub)
-
----
-
-## 📂 Project Structure
-
-```bash
-├── src/
-│   ├── config/             # DB connection & env setup
-│   ├── controllers/        # Business logic (Auth, Admin, Stream)
-│   ├── middlewares/        # Auth protection, Error handling
-│   ├── models/             # Mongoose Schemas (Code, Session, Channel)
-│   ├── routes/             # API Endpoints
-│   ├── utils/              # Helper functions (Response, Validator)
-│   └── app.js              # Express App setup
-├── seeder.js               # Database seeder (Create Initial Admin)
-├── server.js               # Entry point
-└── .env                    # Environment variables
-
+```
+src/
+├── config/         # Database connection
+├── controllers/    # Request handlers (Admin, Auth, Stream)
+├── middlewares/    # Auth, Error Handling, Validation
+├── models/         # Mongoose Schemas (Admin, Channel, Code, Session)
+├── routes/         # API Routes definition
+├── utils/          # Helpers (AppError, catchAsync)
+└── app.js          # Express App setup & Global Middleware
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## 🛡 Admin Roles & Permissions
 
-To run this project, you will need to add the following environment variables to your `.env` file:
-
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/alsaha_sport
-JWT_SECRET=YourSuperSecretKeyHere_123!
-ADMIN_USERNAME=AdminUserName
-ADMIN_PASSWORD=AdminPass
-DAILY_ADMIN_USERNAME=staffusername
-DAILY_ADMIN_PASSWORD=staffPass
-NODE_ENV=development
-
-
-```
+| Feature                     | MASTER_ADMIN | DAILY_ADMIN |
+| :-------------------------- | :----------: | :---------: |
+| **Login**                   |      ✅      |     ✅      |
+| **View Live Sessions**      |      ✅      |     ❌      |
+| **Create Activation Codes** |      ✅      |     ✅      |
+| **View All Codes**          |      ✅      |     ✅      |
+| **Delete Code**             |      ✅      |     ❌      |
+| **Add Channel**             |      ✅      |     ❌      |
+| **Add Stream Provider**     |      ✅      |     ❌      |
 
 ---
 
-## 🔌 API Endpoints Documentation
+## 🔐 API Overview
 
-### 1. Authentication (User)
+### 1. Authentication (User/Streamer)
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/api/auth/activate` | Activate a code & log in (Auto-locks device) |
-| `POST` | `/api/auth/validate` | Check if session is still valid (Heartbeat) |
-| `POST` | `/api/auth/logout` | Kill current session |
+- `POST /api/auth/activate`: Activate a code to get a session token. Checks expiry/ban status.
+- `POST /api/auth/validate`: Heartbeat to keep session alive.
+- `POST /api/auth/logout`: End session.
 
-### 2. Admin Management (RBAC)
+### 2. Admin Management
 
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/api/admin/login` | Public | Admin Login |
-| `POST` | `/api/admin/create` | **Master** | Create new admin (Staff) |
-| `DELETE` | `/api/admin/:id` | **Master** | Delete an admin |
-| `GET` | `/api/admin/profits` | **Master** | View financial stats |
+- `POST /api/admin/login`: Admin login.
+- `POST /api/admin/codes`: Create new activation codes.
+- `GET /api/admin/codes`: List all codes.
+- `DELETE /api/admin/code/:id`: Remove a code (Master Only).
+- `GET /api/admin/sessions/live`: View active user sessions (Master Only).
+- `POST /api/admin/channels`: Add new channels (Master Only).
 
-### 3. Subscription Codes
+### 3. Streaming (Protected)
 
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `POST` | `/api/codes` | **Master/Daily** | Generate new codes |
-| `GET` | `/api/codes` | **Master/Daily** | List all codes |
-| `PATCH` | `/api/codes/:id/suspend` | **Master/Daily** | Ban/Suspend a code |
-| `DELETE` | `/api/codes/:id` | **Master** | Permanently delete code |
-
-### 4. Streaming Content
-
-| Method | Endpoint | Access | Description |
-| --- | --- | --- | --- |
-| `GET` | `/api/stream/channels` | **User/Admin** | Get all channels |
-| `GET` | `/api/stream/categories` | **User/Admin** | Get categories |
-| `POST` | `/api/stream` | **Master** | Add new channel |
+- `GET /api/stream/channels`: Get list of active channels.
+- `GET /api/stream/categories`: Get distinct categories.
+- `GET /api/stream/channel/:id`: Get secure stream URL for a channel.
 
 ---
 
-## 🛡️ Security Logic Explained
+## 🚀 Getting Started
 
-### The "Device Lock" Mechanism
+### Prerequisites
 
-When a user calls `/api/auth/activate`:
+- Node.js & npm
+- MongoDB (Local or Atlas)
 
-1. System checks if code is valid.
-2. Checks for any **existing active session** for this code in the `Sessions` collection.
-3. If found -> **Deletes the old session** (Kicking out the previous user).
-4. Creates a new session with the current `DeviceID` and `IP`.
-5. Returns a JWT token linked to this specific session ID.
+### Installation
+
+1.  **Clone the repository**
+
+    ```bash
+    git clone https://github.com/alsahasport/backend.git
+    cd backend
+    ```
+
+2.  **Install Dependencies**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Configuration**
+    Create a `.env` file in the root directory:
+
+    ```env
+    NODE_ENV=development
+    PORT=5000
+    MONGO_URI=mongodb://localhost:27017/alsahasport
+    JWT_SECRET=your_super_secret_jwt_key_should_be_long
+    ```
+
+4.  **Run the Server**
+
+    ```bash
+    # Development Mode (Nodemon)
+    npm run dev
+
+    # Production Mode
+    npm start
+    ```
 
 ---
 
-## 🚀 Deployment
+## 🧪 Postman Usage
 
-The API is currently live on **Railway**:
+A complete Postman collection is included as `Alsaha_Full_System.postman_collection.json`.
 
-* **Base URL:** `https://alsahasport-production.up.railway.app/api`
+1.  Import the JSON file into Postman.
+2.  The collection uses **Variables**:
+    - `{{base_url}}`: Defaults to `http://localhost:5000/api`
+    - `{{token}}`: Automatically set this after Login/Activate requests if you use scripts, or manually copy the Bearer token.
+3.  **To Test Admin Flow**:
+    - Login as Admin -> Copy `token` -> Paste in Authorization tab of Admin requests.
+4.  **To Test User Flow**:
+    - Activate Code -> Copy `token` -> Paste in Authorization tab of Stream requests.
 
 ---
 
-## 👨‍💻 Author
+## 📄 License
 
-**Abdallah Yasser**
-
-  Full Stack Developer (MERN Stack)
-  
----
-
-*© 2025 Alsahasport Backend System.*
+Private Property of AlsahaSport. Unauthorized copying or distribution is strictly prohibited.
