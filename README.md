@@ -13,6 +13,7 @@ This system facilitates secure streaming sessions, manages subscription codes wi
 
 ## 📑 Table of Contents
 - [Features](#-features)
+- [Security Implementation](#-security-implementation)
 - [Architecture & Tech Stack](#-architecture--tech-stack)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
@@ -25,10 +26,9 @@ This system facilitates secure streaming sessions, manages subscription codes wi
 
 ## 🚀 Features
 
-### 🔐 Security & Auth
+### 🔐 Auth & Identity
 * **JWT Authentication:** Stateless, secure authentication for both Clients and Admins.
-* **Protection:** Implements `Helmet` for header security and `Mongo-Sanitize` against injection attacks.
-* **Rate Limiting:** Prevents brute-force attacks and abuse.
+* **Role-Based Access:** Distinct permissions for Master Admin, Daily Admin, and Users.
 
 ### 📡 Streaming & Content
 * **Dynamic Channels:** API endpoints to fetch channels categorized by genre.
@@ -39,6 +39,29 @@ This system facilitates secure streaming sessions, manages subscription codes wi
 * **Code System:** Generate, track, and revoke subscription codes.
 * **Live Monitoring:** **Real-time** tracking of active user sessions.
 * **Dashboard API:** Full control over content and users.
+
+---
+
+## 🛡️ Security Implementation
+
+This project follows a **Security-First** architecture, implementing rigorous measures to protect data and infrastructure.
+
+### 1️⃣ Dependency Hardening
+We utilize specialized middleware to sanitize inputs and prevent common attacks:
+* **NoSQL Injection:** `express-mongo-sanitize` removes prohibited characters (like `$`) to prevent database injection.
+* **XSS Protection:** `xss-clean` sanitizes user input against malicious HTML scripts.
+* **Parameter Pollution:** `hpp` protects against HTTP Parameter Pollution attacks.
+* **Input Validation:** `express-validator` ensures strict data type enforcement on all endpoints.
+
+### 2️⃣ Traffic Control (Rate Limiting)
+To prevent Brute-Force attacks and DoS attempts, we enforce strict limits:
+* **Auth Routes (Login/Activate):** Limit of **10 requests per hour** per IP.
+* **General API:** Standard limit of **100 requests per 15 minutes**.
+
+### 3️⃣ Network & Header Security
+* **Helmet:** Sets secure HTTP headers to protect against well-known web vulnerabilities.
+* **CORS:** Restricted access policy allowing requests only from trusted domains (Production Frontend).
+* **Sanitization:** Automatic cleaning of request body, query, and params before processing.
 
 ---
 
@@ -64,7 +87,7 @@ alsahasport-backend/
 │   ├── controllers/    # Request logic (Auth, Stream, Admin)
 │   ├── models/         # Mongoose Schemas (User, Code, Channel)
 │   ├── routes/         # API Routes definitions
-│   ├── middleware/     # Auth checks, Error handling
+│   ├── middleware/     # Auth checks, Error handling, Rate Limiters
 │   └── utils/          # Helper functions
 ├── .env.example        # Environment variables template
 ├── server.js           # Entry point
@@ -85,21 +108,22 @@ alsahasport-backend/
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone [https://github.com/Abdallayasseer/Alsahasport.git](https://github.com/Abdallayasseer/Alsahasport.git)
 cd alsahasport-backend
 
 ```
 
-
 2. **Install Dependencies**
+
 ```bash
 npm install
 
 ```
 
-
 3. **Run the Server**
+
 ```bash
 # Development Mode (with nodemon)
 npm run dev
@@ -108,8 +132,6 @@ npm run dev
 npm start
 
 ```
-
-
 
 ---
 
@@ -123,18 +145,15 @@ PORT=5000
 NODE_ENV=development
 
 # Database Configuration
-# Replace with your MongoDB connection string (e.g., MongoDB Atlas or Local)
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/alsahasport
 
 # Security & Authentication
 # Use a long, random string for JWT signing
 JWT_SECRET=your_jwt_secret_key_here
 
-# Primary Administrator Credentials
+# Administrator Credentials
 ADMIN_USERNAME=alsahasportadmin
 ADMIN_PASSWORD=your_secure_admin_password
-
-# Daily Administrator Credentials
 DAILY_ADMIN_USERNAME=dailyadmin
 DAILY_ADMIN_PASSWORD=your_secure_daily_password
 
