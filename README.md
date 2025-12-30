@@ -189,13 +189,9 @@ src/
 └── 📜 app.js            # Express application setup & middleware chain
 ```
 
-```
-
----
 
 ## 📝 Conclusion
 
 The **Alsaha Sport Backend** is engineered for high-security IPTV management, prioritizing atomic operations and strict device-based authentication. By leveraging a robust middleware stack and role-based access control, it ensures a secure and scalable environment for managing activation codes and streaming services.
 
 For further inquiries or support, please refer to the internal documentation or contact the development team.
-```
