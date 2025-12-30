@@ -7,9 +7,9 @@ const {
   refreshToken,
   logout,
   validateSession,
-} = require("../controllers/auth.Controller");
+} = require("../controllers/authController");
 
-const { protect } = require("../middlewares/authMiddleware");
+const { protect } = require("../middlewares/auth");
 const { validateActivate } = require("../middlewares/validate");
 const { authLimiter } = require("../middlewares/rateLimiters");
 

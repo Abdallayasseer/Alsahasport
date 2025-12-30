@@ -40,4 +40,8 @@ const activationCodeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound Index for frequent queries filtering by status and creator
+activationCodeSchema.index({ status: 1, createdBy: 1 });
+activationCodeSchema.index({ codeHash: 1 }, { unique: true }); // Explicitly redundant but good for clarity/ensuring
+
 module.exports = mongoose.model("ActivationCode", activationCodeSchema);

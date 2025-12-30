@@ -1,594 +1,438 @@
 {
-	"info": {
-		"_postman_id": "b3e3462a-8812-45e1-9533-305140683610",
-		"name": "Alsaha System - Fixed",
-		"description": "Fixed and Secured API collection. Includes Admin RBAC/Session login, Display Token flow, and Client auth fixes.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Auth (Client)",
-			"item": [
-				{
-					"name": "Activate Code",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.accessToken) {",
-									"    pm.collectionVariables.set(\"token\", jsonData.accessToken);",
-                                    "    pm.collectionVariables.set(\"client_token\", jsonData.accessToken);",
-									"    console.log(\"Client Token updated successfully\");",
-									"}",
-									"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"code\": \"RAW_CODE_FROM_DISPLAY_ENDPOINT\",\n    \"deviceId\": \"android_test_device\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/auth/activate",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"auth",
-								"activate"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Validate Session",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/auth/validate",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"auth",
-								"validate"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Logout",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/auth/logout",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"auth",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Admin",
-			"item": [
-				{
-					"name": "Auth",
-					"item": [
-						{
-							"name": "Admin Login",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = pm.response.json();",
-											"if (jsonData.accessToken) {",
-											"    pm.collectionVariables.set(\"token\", jsonData.accessToken);",
-                                            "    pm.collectionVariables.set(\"admin_token\", jsonData.accessToken);",
-											"    console.log(\"Admin Token updated successfully\");",
-											"}",
-                                            "if (jsonData.data && jsonData.data.sessionId) {",
-                                            "    pm.collectionVariables.set(\"session_id\", jsonData.data.sessionId);",
-                                            "}",
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"{{password}}\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{base_url}}/admin/login",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"login"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Code Management",
-					"item": [
-						{
-							"name": "Create Code",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-                                            "var jsonData = pm.response.json();",
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-                                            "if (jsonData.data && jsonData.data.displayToken) {",
-                                            "    pm.collectionVariables.set(\"display_token\", jsonData.data.displayToken);",
-                                            "    pm.collectionVariables.set(\"code_id\", jsonData.data.id);",
-                                            "    console.log(\"Display Token Saved\");",
-                                            "}"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"durationDays\": 30\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{base_url}}/admin/codes",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"codes"
-									]
-								}
-							},
-							"response": []
-						},
-                        {
-							"name": "Display Code (Once)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-                                            "var jsonData = pm.response.json();",
-                                            "if(jsonData.data && jsonData.data.code) { console.log(\"RAW CODE REVEALED:\", jsonData.data.code); }"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/admin/code/{{code_id}}/display?token={{display_token}}",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"code",
-                                        "{{code_id}}",
-                                        "display"
-									],
-                                    "query": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{display_token}}"
-                                        }
-                                    ]
-								},
-                                "description": "Returns raw code once."
-							},
-							"response": []
-						},
-						{
-							"name": "Get All Codes",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/admin/codes",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"codes"
-									]
-								},
-                                "description": "Returns metadata ONLY."
-							},
-							"response": []
-						},
-						{
-							"name": "Delete Code",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/admin/code/:id",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"code",
-										":id"
-									],
-									"variable": [
-										{
-											"key": "id",
-											"value": "{{code_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Monitoring",
-					"item": [
-						{
-							"name": "Get Live Sessions",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/admin/sessions/live",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"sessions",
-										"live"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Content Management",
-					"item": [
-						{
-							"name": "Add Channel",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"Sports 1 HD\",\n    \"category\": \"Sports\",\n    \"streamUrl\": \"http://example.com/stream.m3u8\",\n    \"logoUrl\": \"http://example.com/logo.png\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{base_url}}/admin/channels",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"channels"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Add Provider",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"Provider X\",\n    \"type\": \"xtream\",\n    \"dns\": \"http://provider-x.com\",\n    \"username\": \"admin\",\n    \"password\": \"pass\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{base_url}}/admin/provider",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"admin",
-										"provider"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "Stream",
-			"item": [
-				{
-					"name": "Get Channels",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-								],
-								"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/stream/channels",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"stream",
-										"channels"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get Categories",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/stream/categories",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"stream",
-										"categories"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get Channel Stream",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/stream/channel/:id",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"stream",
-										"channel",
-										":id"
-									],
-									"variable": [
-										{
-											"key": "id",
-											"value": "channel_id_here"
-										}
-									]
-								}
-							},
-							"response": []
-						}
-					]
-		}
-	],
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{token}}",
-				"type": "string"
-			}
-		]
-	},
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:5000/api",
-			"type": "string"
-		},
-		{
-			"key": "token",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "password",
-			"value": "securepassword",
-			"type": "string"
-		},
+  "info": {
+    "_postman_id": "b3e3462a-8812-45e1-9533-305140683610",
+    "name": "Alsaha System - Refactored",
+    "description": "Fully updated collection for Refactored Backend Architecture. Includes strict security tests, auto-token capture, and organized folders.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
         {
-			"key": "admin_token",
-			"value": "",
-			"type": "string"
-		},
+          "name": "Activate Code (Login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+                  "    console.log(\"Access Token updated successfully\");",
+                  "}",
+                  "// Refresh token is HttpOnly cookie, but if returned in body (optional), capture it:",
+                  "if (jsonData.refreshToken) {",
+                  "    pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+                  "}",
+                  "pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"code\": \"RAW_CODE_FROM_DISPLAY_ENDPOINT\",\n    \"deviceId\": \"android_test_device_001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/activate",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "activate"]
+            }
+          },
+          "response": []
+        },
         {
-			"key": "client_token",
-			"value": "",
-			"type": "string"
-		},
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+                  "    console.log(\"Access Token Refreshed\");",
+                  "}",
+                  "pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Send refresh token in body if cookies not automatically handled by client"
+          },
+          "response": []
+        },
         {
-			"key": "code_id",
-			"value": "",
-			"type": "string"
-		},
+          "name": "Validate Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/validate",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "validate"]
+            }
+          },
+          "response": []
+        },
         {
-			"key": "display_token",
-			"value": "",
-			"type": "string"
-		},
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
         {
-			"key": "session_id",
-			"value": "",
-			"type": "string"
-		}
-	]
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Admin Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.accessToken) {",
+                      "    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+                      "    console.log(\"Admin Token updated successfully\");",
+                      "}",
+                      "pm.expect(pm.response.code).to.be.oneOf([200, 201]);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "login"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Code Management",
+          "item": [
+            {
+              "name": "Create Code",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var jsonData = pm.response.json();",
+                      "pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                      "if (jsonData.data && jsonData.data.displayToken) {",
+                      "    pm.collectionVariables.set(\"display_token\", jsonData.data.displayToken);",
+                      "    pm.collectionVariables.set(\"code_id\", jsonData.data.id);",
+                      "    console.log(\"Display Token Saved\");",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"durationDays\": 30\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/codes",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "codes"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Display Code (Once)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                      "var jsonData = pm.response.json();",
+                      "if(jsonData.data && jsonData.data.code) { console.log(\"RAW CODE REVEALED:\", jsonData.data.code); }"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/code/{{code_id}}/display?token={{display_token}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "code", "{{code_id}}", "display"],
+                  "query": [
+                    {
+                      "key": "token",
+                      "value": "{{display_token}}"
+                    }
+                  ]
+                },
+                "description": "Returns raw code once."
+              },
+              "response": []
+            },
+            {
+              "name": "Get All Codes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/codes",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "codes"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Code",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/code/:id",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "code", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{code_id}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Monitoring",
+          "item": [
+            {
+              "name": "Get Live Sessions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/sessions/live",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "sessions", "live"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Content Management",
+          "item": [
+            {
+              "name": "Add Channel",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Sports 1 HD\",\n    \"category\": \"Sports\",\n    \"streamUrl\": \"http://example.com/stream.m3u8\",\n    \"logoUrl\": \"http://example.com/logo.png\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/channels",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "channels"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add Provider",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Provider X\",\n    \"type\": \"xtream\",\n    \"dns\": \"http://provider-x.com\",\n    \"username\": \"admin\",\n    \"password\": \"pass\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/provider",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "provider"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stream",
+      "item": [
+        {
+          "name": "Get Channels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stream/channels",
+              "host": ["{{base_url}}"],
+              "path": ["stream", "channels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stream/categories",
+              "host": ["{{base_url}}"],
+              "path": ["stream", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Channel Stream",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stream/channel/:id",
+              "host": ["{{base_url}}"],
+              "path": ["stream", "channel", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "channel_id_here"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "securepassword",
+      "type": "string"
+    },
+    {
+      "key": "code_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "display_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
 }

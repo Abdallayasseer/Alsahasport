@@ -1,221 +1,190 @@
 # 📺 AlsahaSport Backend API
 
-![Node.js](https://img.shields.io/badge/Node.js-v14%2B-green?style=flat&logo=node.js)
-![Express.js](https://img.shields.io/badge/Express.js-4.x-lightgrey?style=flat&logo=express)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=flat&logo=mongodb)
-![License](https://img.shields.io/badge/License-ISC-blue?style=flat)
+![Node.js](https://img.shields.io/badge/Node.js-20.x-green?style=flat&logo=node.js)
+![Express](https://img.shields.io/badge/Express-5.x-000000?style=flat&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-9.x-green?style=flat&logo=mongodb)
+![License](https://img.shields.io/badge/License-ISC-blue)
+![Security](https://img.shields.io/badge/Security-Banking--Grade-red?style=flat&logo=security)
 
-> A robust, high-performance backend service engineered for the **AlsahaSport** streaming platform.
-
-This system facilitates secure streaming sessions, manages subscription codes with expiration logic, provides real-time user monitoring, and offers a comprehensive administration dashboard.
-
----
-
-## 📑 Table of Contents
-- [Features](#-features)
-- [Security Implementation](#-security-implementation)
-- [Architecture & Tech Stack](#-architecture--tech-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-configuration)
-- [API Documentation](#-api-endpoints)
-- [Testing & Postman](#-testing-with-postman)
-- [License](#-license)
+A high-performance, banking-grade secure REST API for the AlsahaSport platform, built with Node.js, Express, and MongoDB. This system features Zero-Trust architecture, stateful session management, and robust role-based access control.
 
 ---
 
-## 🚀 Features
+## 🛠️ Tech Stack & Dependencies
 
-### 🔐 Auth & Identity
-* **JWT Authentication:** Stateless, secure authentication for both Clients and Admins.
-* **Role-Based Access:** Distinct permissions for Master Admin, Daily Admin, and Users.
+This project leverages a robust set of industry-standard packages to ensure security, stability, and performance.
 
-### 📡 Streaming & Content
-* **Dynamic Channels:** API endpoints to fetch channels categorized by genre.
-* **Secure Links:** Delivers protected stream URLs to authenticated clients.
-* **Provider Management:** Manage different stream sources seamlessly.
-
-### 🕹️ Administration
-* **Code System:** Generate, track, and revoke subscription codes.
-* **Live Monitoring:** **Real-time** tracking of active user sessions.
-* **Dashboard API:** Full control over content and users.
-
----
-
-## 🛡️ Security Implementation
-
-This project follows a **Security-First** architecture, implementing rigorous measures to protect data and infrastructure.
-
-### 1️⃣ Dependency Hardening
-We utilize specialized middleware to sanitize inputs and prevent common attacks:
-* **NoSQL Injection:** `express-mongo-sanitize` removes prohibited characters (like `$`) to prevent database injection.
-* **XSS Protection:** `xss-clean` sanitizes user input against malicious HTML scripts.
-* **Parameter Pollution:** `hpp` protects against HTTP Parameter Pollution attacks.
-* **Input Validation:** `express-validator` ensures strict data type enforcement on all endpoints.
-
-### 2️⃣ Traffic Control (Rate Limiting)
-To prevent Brute-Force attacks and DoS attempts, we enforce strict limits:
-* **Auth Routes (Login/Activate):** Limit of **10 requests per hour** per IP.
-* **General API:** Standard limit of **100 requests per 15 minutes**.
-
-### 3️⃣ Network & Header Security
-* **Helmet:** Sets secure HTTP headers to protect against well-known web vulnerabilities.
-* **CORS:** Restricted access policy allowing requests only from trusted domains (Production Frontend).
-* **Sanitization:** Automatic cleaning of request body, query, and params before processing.
-
----
-
-## 🛠 Architecture & Tech Stack
-
-| Component | Technology | Description |
+### 🟢 Core & Database
+| Package | Version | Description |
 | :--- | :--- | :--- |
-| **Runtime** | Node.js | JavaScript runtime built on Chrome's V8 engine. |
-| **Framework** | Express.js | Fast, unopinionated, minimalist web framework. |
-| **Database** | MongoDB | NoSQL database with **Mongoose** ODM. |
-| **Auth** | JWT | JSON Web Tokens for stateless authentication. |
-| **Security** | BcryptJS | Password hashing. |
-| **Logging** | Morgan | HTTP request logger middleware. |
+| ![NodeJS](https://img.shields.io/badge/node.js-43853D?style=flat-square&logo=node.js&logoColor=white) | `v20+` | JavaScript Runtime Environment. |
+| ![Express](https://img.shields.io/badge/express.js-%23404d59.svg?style=flat-square&logo=express&logoColor=%2361DAFB) | `^5.2.1` | Fast, unopinionated web framework for Node.js. |
+| ![Mongoose](https://img.shields.io/badge/Mongoose-880000?style=flat-square&logo=mongoose&logoColor=white) | `^9.0.2` | Elegant MongoDB object modeling. |
+| ![Dotenv](https://img.shields.io/badge/dotenv-ECD53F?style=flat-square&logo=dotenv&logoColor=black) | `^17.2.3` | Loads environment variables from `.env` file. |
+| ![CookieParser](https://img.shields.io/badge/cookie--parser-gray?style=flat-square) | `^1.4.7` | Parse Cookie header and populate `req.cookies`. |
+
+### 🛡️ Security & Hardening
+| Package | Version | Description |
+| :--- | :--- | :--- |
+| ![Helmet](https://img.shields.io/badge/helmet-security-blue?style=flat-square&logo=security&logoColor=white) | `^8.1.0` | Secures apps by setting various HTTP headers. |
+| ![Bcrypt](https://img.shields.io/badge/bcryptjs-red?style=flat-square&logo=lock&logoColor=white) | `^3.0.3` | Optimized bcrypt for password hashing. |
+| ![JWT](https://img.shields.io/badge/jsonwebtoken-000000?style=flat-square&logo=json-web-tokens&logoColor=white) | `^9.0.3` | Implementation of JSON Web Tokens. |
+| ![CORS](https://img.shields.io/badge/cors-success?style=flat-square) | `^2.8.5` | Middleware to enable Cross-Origin Resource Sharing. |
+| ![RateLimit](https://img.shields.io/badge/express--rate--limit-orange?style=flat-square) | `^8.2.1` | Basic rate-limiting middleware for Express. |
+| ![MongoSanitize](https://img.shields.io/badge/express--mongo--sanitize-green?style=flat-square) | `^2.2.0` | Sanitizes inputs against MongoDB Operator Injection. |
+| ![XSS](https://img.shields.io/badge/xss--clean-blue?style=flat-square) | `^0.1.4` | Middleware to sanitize user input from XSS attacks. |
+| ![HPP](https://img.shields.io/badge/hpp-purple?style=flat-square) | `^0.2.3` | Protection against HTTP Parameter Pollution attacks. |
+
+### ⚡ Validation, Performance & Logging
+| Package | Version | Description |
+| :--- | :--- | :--- |
+| ![Zod](https://img.shields.io/badge/zod-3E67B1?style=flat-square&logo=zod&logoColor=white) | `^4.2.1` | TypeScript-first schema declaration and validation. |
+| ![Validator](https://img.shields.io/badge/express--validator-blue?style=flat-square) | `^7.3.1` | Set of express.js middlewares that wraps validator.js. |
+| ![Compression](https://img.shields.io/badge/compression-performance-orange?style=flat-square) | `^1.8.1` | Node.js compression middleware (Gzip). |
+| ![Winston](https://img.shields.io/badge/winston-logging-green?style=flat-square) | `^3.19.0` | A logger for just about everything. |
+| ![Morgan](https://img.shields.io/badge/morgan-logging-green?style=flat-square) | `^1.10.1` | HTTP request logger middleware for node.js. |
+
+---
+
+## 🔒 Enterprise-Grade Security Architecture
+
+This project has been completely re-architected to meet strict security standards.
+
+### 1. Zero-Trust Authentication
+
+- **Stateful Sessions**: Unlike standard stateless JWTs, we track every active session in MongoDB (`Session` model). This allows for immediate revocation of access.
+- **Token Rotation**: Implements a secure Refresh Token rotation powered by `cron`-like expiration handling and sliding windows.
+- **Device Fingerprinting**: Tracks `deviceId`, IP address, and User-Agent to detect suspicious login attempts.
+
+### 2. Role-Based Access Control (RBAC)
+
+- **Granular Roles**: Distinct permissions for `MASTER_ADMIN`, `DAILY_ADMIN`, and standard `user` (Activation Code).
+- **Middleware Enforcement**: Protected routes use `protect` and `restrictTo('ROLE')` middleware to ensure least-privilege access.
+
+### 3. Atomic Code Redemption
+
+- **Concurrency Safe**: Uses MongoDB transactions (or atomic `findOneAndUpdate`) to prevent "Race Conditions" where a single code could be used multiple times simultaneously.
+
+### 4. Hardening & Optimization
+
+- **Helmet**: Sets secure HTTP headers (CSP, HSTS, X-Frame-Options).
+- **Rate Limiting**:
+  - **Auth Limiter**: Strict limits on login/activation endpoints to prevent Brute Force.
+  - **API Limiter**: General throttling for system stability.
+- **Sanitization**:
+  - `xss-clean`: Defends against Cross-Site Scripting.
+  - `express-mongo-sanitize`: Prevents NoSQL Injection.
+  - `hpp`: Prevents HTTP Parameter Pollution.
+- **Validation**: strict **Zod** schemas for all inputs.
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+
+- Node.js (v18+)
+- MongoDB (Local or Atlas)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/your-repo/alsahasport-backend.git
+cd alsahasport-backend
+npm install
+
+```
+
+### 2. Configure Environment
+
+Create a `.env` file in the root directory:
+
+```env
+# Server
+PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+CORS_WHITELIST=http://localhost:3000,[https://alsaha.com](https://alsaha.com)
+
+# Database
+MONGO_URI=mongodb://localhost:27017/alsahasport
+
+# Security Secrets (Use High Entropy strings!)
+JWT_SECRET=super_secret_jwt_key_here
+ACTIVATION_SECRET=super_secret_hash_salt
+
+# (Optional - Configurable in AuthService)
+REFRESH_SECRET=super_secret_refresh_key
+SESSION_EXPIRY=14d
+
+# Default Admin Credentials (Seed)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=securepassword
+
+```
+
+### 3. Run Server
+
+```bash
+# Development (with Morgan logging)
+npm run dev
+
+# Production (Structured Winston logging)
+node src/server.js
+
+```
+
+---
+
+## 📚 API Documentation
+
+### 👤 Authentication (Auth )
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/activate` | Redeem code & strict device login | Public |
+| `POST` | `/api/auth/refresh` | **Rotate** Access/Refresh tokens | Public (Cookie/Body) |
+| `POST` | `/api/auth/validate` | Verify session validity | Authenticated |
+| `POST` | `/api/auth/logout` | Revoke current session | Authenticated |
+| `POST` | `/api/auth/logout-all` | **Security Alert**: Revoke ALL devices | Authenticated |
+
+### 🛠️ Administration (Admin)
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| `POST` | `/api/admin/login` | Admin Dashboard Login | Public |
+| `POST` | `/api/admin/codes` | Generate new Activation Codes | Master/Daily Admin |
+| `GET` | `/api/admin/codes` | List all codes | Master/Daily Admin |
+| `GET` | `/api/admin/code/:id/display` | **One-Time** View of Raw Code | Master/Daily Admin |
+| `GET` | `/api/admin/sessions/live` | Monitor active streams/users | Master Admin |
+| `POST` | `/api/admin/channels` | Add new IPTV Channel | Master Admin |
+
+### 📺 Streaming (Stream)
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| `GET` | `/api/stream/channels` | Get all available channels | User (Active) |
+| `GET` | `/api/stream/categories` | Get channel categories | User (Active) |
+| `GET` | `/api/stream/channel/:id` | Get stream URL (Signed/Protected) | User (Active) |
 
 ---
 
 ## 📂 Project Structure
 
-```bash
-alsahasport-backend/
-├── src/
-│   ├── config/         # Database and Env configurations
-│   ├── controllers/    # Request logic (Auth, Stream, Admin)
-│   ├── models/         # Mongoose Schemas (User, Code, Channel)
-│   ├── routes/         # API Routes definitions
-│   ├── middleware/     # Auth checks, Error handling, Rate Limiters
-│   └── utils/          # Helper functions
-├── .env.example        # Environment variables template
-├── server.js           # Entry point
-└── package.json        # Dependencies
-
 ```
-
+src/
+├── config/ # DB Connection
+├── controllers/ # Request Handling (Zod Validation -> Service)
+├── middlewares/ # Security (Auth, RateLimit, Sanitize)
+├── models/ # Mongoose Schemas (Indexes Optimized)
+├── routes/ # API Routing
+├── services/ # Business Logic (AuthService)
+├── utils/ # Helpers (Logger, AppError)
+└── app.js # App Entry (Middleware Chain)
 ---
 
-## ⚡ Getting Started
+## 📝 Conclusion
 
-### Prerequisites
+The **Alsaha Sport Backend** is engineered for high-security IPTV management, prioritizing atomic operations and strict device-based authentication. By leveraging a robust middleware stack and role-based access control, it ensures a secure and scalable environment for managing activation codes and streaming services.
 
-* Node.js (v14 or higher)
-* MongoDB (Local or Atlas URL)
-* Git
-
-### Installation
-
-1. **Clone the repository**
-
-```bash
-git clone https://github.com/Abdallayasseer/Alsahasport.git
-cd alsahasport-backend
-
-```
-
-2. **Install Dependencies**
-
-```bash
-npm install
-
-```
-
-3. **Run the Server**
-
-```bash
-# Development Mode (with nodemon)
-npm run dev
-
-# Production Mode
-npm start
-
-```
-
----
-
-## 🔐 Environment Configuration
-
-Create a `.env` file in the root directory. You can use the reference below:
-
-```ini
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-
-# Database Configuration
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/alsahasport
-
-# Security & Authentication
-# Use a long, random string for JWT signing
-JWT_SECRET=your_jwt_secret_key_here
-
-# Administrator Credentials
-ADMIN_USERNAME=alsahasportadmin
-ADMIN_PASSWORD=your_secure_admin_password
-DAILY_ADMIN_USERNAME=dailyadmin
-DAILY_ADMIN_PASSWORD=your_secure_daily_password
-
-# Front End URl
-FRONTEND_URL=http://localhost:5000
-
-```
-
----
-
-## 📚 API Endpoints
-
-### 👤 Client Authentication
-
-| Method | Endpoint | Description | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/auth/activate` | Activate subscription code & get token. | ❌ |
-| `POST` | `/api/auth/validate` | Validate current session token. | ✅ |
-| `POST` | `/api/auth/logout` | Terminate session. | ✅ |
-
-### 🛠️ Admin Dashboard
-
-| Method | Endpoint | Description | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/api/admin/login` | Admin login. | ❌ |
-| `POST` | `/api/admin/codes` | Create new subscription codes. | ✅ |
-| `GET` | `/api/admin/codes` | Retrieve all codes. | ✅ |
-| `DELETE` | `/api/admin/code/:id` | Delete a code. | ✅ |
-| `GET` | `/api/admin/sessions/live` | **Monitor live active users.** | ✅ |
-| `POST` | `/api/admin/channels` | Add TV channel. | ✅ |
-| `POST` | `/api/admin/provider` | Add stream provider. | ✅ |
-
-### 📺 Streaming
-
-| Method | Endpoint | Description | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/api/stream/channels` | List all channels (filter by category). | ✅ |
-| `GET` | `/api/stream/categories` | List available categories. | ✅ |
-| `GET` | `/api/stream/channel/:id` | Get secure stream URL. | ✅ |
-
----
-
-## 🧪 Testing with Postman
-
-A fully automated Postman collection is included in this repository: `Alsaha.postman_collection.json`.
-
-### How to use:
-
-1. Import the collection into Postman.
-2. Ensure the environment variable `{{base_url}}` is set to `http://localhost:5000/api`.
-
-### 🤖 Automation Features:
-
-* **Auto-Token Injection:** When you run the **Activate Code** or **Admin Login** request, the system automatically captures the `token` from the response and saves it to the Collection Variables.
-* **No Copy-Paste Needed:** All subsequent requests (like getting channels) will automatically use the saved token.
-
----
-
-## 📄 License
-
-This project is licensed under the **ISC License**.
-
----
-
-**Developed by Abdullah Yasser**
+For further inquiries or support, please refer to the internal documentation or contact the development team.

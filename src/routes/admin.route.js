@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect, restrictTo } = require("../middlewares/authMiddleware");
+const { protect, restrictTo } = require("../middlewares/auth");
 const {
   createCode,
   addChannel,
