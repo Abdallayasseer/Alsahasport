@@ -13,24 +13,16 @@ const loginSchema = z.object({
   deviceId: z.string().optional(),
 });
 
-exports.completeLogin = catchAsync(async (req, res, next) => {
-  // req.redeemedUser is set by 'redeemCodeAtomic' middleware
-  const user = req.redeemedUser;
-  if (!user) {
-    return next(new AppError("User not identified via redemption", 401));
-  }
-
-  // Validate Input
-  const { deviceId } = loginSchema.parse(req.body);
-
+const createSessionAndSend = async (
+  user,
+  deviceId,
+  ip,
+  userAgent,
+  res,
+  role = "user"
+) => {
   const { accessToken, refreshToken, expiresAt, session } =
-    await AuthService.createSession(
-      user,
-      "user",
-      deviceId,
-      req.ip,
-      req.headers["user-agent"]
-    );
+    await AuthService.createSession(user, role, deviceId, ip, userAgent);
 
   // Send Cookie
   res.cookie("refreshToken", refreshToken, {
@@ -43,14 +35,36 @@ exports.completeLogin = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     accessToken,
-    expiresAt: user.expiresAt, // Subscription expiry
+    expiresAt,
     data: {
       id: user._id,
-      username: user.username, // Assuming 'codeHash' or similar if username not persistent
-      role: "user",
+      username: user.username,
+      role,
       sessionId: session._id,
     },
   });
+};
+
+exports.createSessionAndSend = createSessionAndSend;
+
+exports.completeLogin = catchAsync(async (req, res, next) => {
+  // req.redeemedUser is set by 'redeemCodeAtomic' middleware
+  const user = req.redeemedUser;
+  if (!user) {
+    return next(new AppError("User not identified via redemption", 401));
+  }
+
+  // Validate Input
+  const { deviceId } = loginSchema.parse(req.body);
+
+  await createSessionAndSend(
+    user,
+    deviceId,
+    req.ip,
+    req.headers["user-agent"],
+    res,
+    "user"
+  );
 });
 
 exports.refreshToken = catchAsync(async (req, res, next) => {

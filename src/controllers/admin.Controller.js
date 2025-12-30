@@ -30,7 +30,7 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
   // Note: Admin Controller needs access to createSessionAndSend.
   // We can require it or move logic. Requiring from another controller is circular but
   // standard pattern is "AuthService". Here simpler to just import.
-  const { createSessionAndSend } = require("./auth.Controller");
+  const { createSessionAndSend } = require("./authController");
 
   await createSessionAndSend(
     admin,

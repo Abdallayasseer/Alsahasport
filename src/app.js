@@ -49,7 +49,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 
 // Compression
 app.use(compression());
@@ -59,36 +59,49 @@ app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser()); // Parsing cookies for Refresh Tokens
 
 // Data Sanitization against NoSQL query injection
-// Express 5 workaround if needed, passing blank object options to mongoSanitize if compatible,
-// or using the manual patch if 'express-mongo-sanitize' hasn't updated.
-// We will retry standard usage first, or keep the patch if reliable.
-// The user previously had:
-/*
+// Manual sanitization to avoid Express 5 compatibility issues with express-mongo-sanitize
 app.use((req, res, next) => {
   if (req.body) req.body = mongoSanitize.sanitize(req.body);
-  ...
-*/
-// We'll trust standard middleware first but if it fails we revert.
-// Let's use the standard way but be careful.
-app.use(mongoSanitize());
-// If the user specifically added the workaround for Express 5, we should probably keep it or check.
-// Reverting to the robust workaround pattern for safety since user code had it.
-/*
-app.use((req, res, next) => {
-    // ... manual sanitization logic ...
-    next();
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  if (req.query) {
+    try {
+      req.query = mongoSanitize.sanitize(req.query);
+    } catch (err) {
+      // In some Express 5 environments, req.query might be read-only or a getter
+      // We log the warning but don't crash.
+      console.warn("Warning: Could not sanitize req.query:", err.message);
+    }
+  }
+  next();
 });
-*/
-// Actually, let's use the clean approach but if it breaks we know why.
-// Given "The Ultimate" prompt, we want standard libraries.
-// If 'express-mongo-sanitize' is recent (v2.2.0), it might support it.
-// But let's stick to the prompt's request for "Hardening: Implement ... express-mongo-sanitize".
 
 // Data Sanitization against XSS
-app.use(xss());
+// Manual wrapper for xss-clean to handle Express 5 req.query issues
+app.use((req, res, next) => {
+  try {
+    xss()(req, res, next);
+  } catch (err) {
+    console.warn(
+      "Warning: xss-clean failed (likely req.query read-only):",
+      err.message
+    );
+    next();
+  }
+});
 
 // Prevent Parameter Pollution
-app.use(hpp());
+// Manual wrapper for hpp to handle Express 5 req.query issues
+app.use((req, res, next) => {
+  try {
+    hpp()(req, res, next);
+  } catch (err) {
+    console.warn(
+      "Warning: hpp failed (likely req.query read-only):",
+      err.message
+    );
+    next();
+  }
+});
 
 // Development logging
 if (process.env.NODE_ENV === "development") {
@@ -110,7 +123,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/stream", streamRoutes);
 
 // 404 Handler
-app.all("*", (req, res, next) => {
+app.all(/(.*)/, (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
