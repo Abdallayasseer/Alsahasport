@@ -1,17 +1,11 @@
-const { z } = require("zod");
 const AuthService = require("../services/auth.service");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 
-// Zod Schemas
-const refreshSchema = z.object({
-  refreshToken: z.string().min(1, "Refresh token is required"),
-});
-
-// Since completeLogin receives data from middleware, validation might be handled there or here for body params like 'deviceId'
-const loginSchema = z.object({
-  deviceId: z.string().optional(),
-});
+const {
+  refreshSchema,
+  loginSchema,
+} = require("../validations/auth.validation");
 
 const createSessionAndSend = async (
   user,
