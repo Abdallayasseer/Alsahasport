@@ -33,7 +33,6 @@ router.post(
   "/codes",
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
   validateCreateCode,
-  validateCreateCode,
   createCode
 );
 router.get(

@@ -25,13 +25,23 @@ class AdminService {
     );
 
     const codeRaw = crypto.randomBytes(6).toString("hex").toUpperCase();
-    const secret = process.env.ACTIVATION_SECRET;
+    let secret = process.env.ACTIVATION_SECRET;
 
     if (!secret) {
-      logger.error(
-        "[createCode] CRITICAL: ACTIVATION_SECRET environment variable is not set!"
-      );
-      throw new AppError("Server Misconfiguration: No Activation Secret", 500);
+      if (process.env.NODE_ENV === "production") {
+        logger.error(
+          "[createCode] CRITICAL: ACTIVATION_SECRET environment variable is not set in PRODUCTION!"
+        );
+        throw new AppError(
+          "Server Misconfiguration: No Activation Secret. Please contact support.",
+          500
+        );
+      } else {
+        logger.warn(
+          "[createCode] ACTIVATION_SECRET not set. Using insecure fallback for development."
+        );
+        secret = "dev_fallback_secret_do_not_use_in_prod";
+      }
     }
 
     const codeHash = crypto

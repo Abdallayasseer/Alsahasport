@@ -1,1 +1,6 @@
 2025-12-31 09:49:38 error: [Error Handler] Invalid username or password
+2025-12-31 11:53:36 error: [Error Handler] Can't find /api/random-route-that-does-not-exist on this server!
+2025-12-31 11:53:36 error: [Error Handler] Activation code is required
+2025-12-31 11:53:36 warn: [Auth] No token provided in request
+2025-12-31 11:53:36 error: [Error Handler] You are not logged in! Please log in to get access.
+2025-12-31 11:53:36 error: [Error Handler] Invalid Code
