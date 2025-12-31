@@ -27,6 +27,15 @@ const { authLimiter } = require("../middlewares/rateLimiters");
 
 router.post("/login", authLimiter, validateLogin, loginAdmin);
 
+// Verification Endpoint (Protected)
+const { verifyMasterPassword } = require("../controllers/admin.Controller");
+router.post(
+  "/verify-master-password",
+  protect,
+  restrictTo("MASTER_ADMIN"),
+  verifyMasterPassword
+);
+
 router.use(protect);
 
 router.post(

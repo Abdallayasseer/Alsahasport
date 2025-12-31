@@ -17,6 +17,14 @@ class AdminService {
     return admin;
   }
 
+  async verifyMasterPassword(adminId, password) {
+    const admin = await Admin.findById(adminId).select("+password");
+    if (!admin || !(await bcrypt.compare(password, admin.password))) {
+      return false;
+    }
+    return true;
+  }
+
   async createCode(adminId, { durationDays, maxDevices }) {
     const logger = require("../utils/logger");
 
@@ -131,6 +139,38 @@ class AdminService {
     } catch (err) {
       throw new AppError("Decryption failed", 500);
     }
+  }
+
+  async deleteCode(adminId, codeId, password) {
+    console.log(
+      `[deleteCode] Verification attempt. AdminID: ${adminId}, CodeID: ${codeId}`
+    );
+    const admin = await Admin.findById(adminId).select("+password");
+    console.log(`[deleteCode] Admin found: ${!!admin}`);
+
+    if (!admin) {
+      console.log("[deleteCode] Admin not found");
+      throw new AppError("Admin not found", 404);
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    console.log(`[deleteCode] Password match result: ${isMatch}`);
+
+    if (!isMatch) {
+      console.log("[deleteCode] Password verification failed. Throwing 401.");
+      throw new AppError(
+        "Incorrect password. Master Admin verification failed.",
+        401
+      );
+    }
+
+    console.log("[deleteCode] Password verified. Proceeding to delete.");
+    const code = await ActivationCode.findByIdAndDelete(codeId);
+    if (!code) {
+      throw new AppError("No code found with that ID", 404);
+    }
+    await Session.findOneAndDelete({ codeId: codeId });
+    return true;
   }
 
   async getDashboardStats() {

@@ -4,3 +4,4 @@
 2025-12-31 11:53:36 warn: [Auth] No token provided in request
 2025-12-31 11:53:36 error: [Error Handler] You are not logged in! Please log in to get access.
 2025-12-31 11:53:36 error: [Error Handler] Invalid Code
+2025-12-31 18:14:20 error: [Error Handler] Invalid username or password

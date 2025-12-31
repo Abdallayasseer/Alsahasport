@@ -23,6 +23,30 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
   );
 });
 
+exports.verifyMasterPassword = catchAsync(async (req, res, next) => {
+  const { password } = req.body;
+  if (!password) {
+    return next(new AppError("Password is required", 400));
+  }
+
+  const isValid = await AdminService.verifyMasterPassword(
+    req.user._id,
+    password
+  );
+
+  if (!isValid) {
+    return res.status(401).json({
+      success: false,
+      message: "Incorrect password",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Password verified",
+  });
+});
+
 exports.createCode = catchAsync(async (req, res, next) => {
   const { newCode, codeRaw, displayToken } = await AdminService.createCode(
     req.user._id,
@@ -130,11 +154,13 @@ exports.getAllCodes = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteCode = catchAsync(async (req, res, next) => {
-  const code = await ActivationCode.findByIdAndDelete(req.params.id);
-  if (!code) {
-    return next(new AppError("No code found with that ID", 404));
+  const { password } = req.body;
+  if (!password) {
+    return next(
+      new AppError("Master Admin password required for deletion", 400)
+    );
   }
-  await Session.findOneAndDelete({ codeId: req.params.id });
+  await AdminService.deleteCode(req.user._id, req.params.id, password);
   res.status(200).json({ success: true, message: "Code deleted successfully" });
 });
 
