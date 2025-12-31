@@ -7,6 +7,8 @@ const Admin = require("../models/Admin.model");
 const ActivationCode = require("../models/ActivationCode.model");
 
 const protect = catchAsync(async (req, res, next) => {
+  const logger = require("../utils/logger");
+
   // 1) Get token
   let token;
   if (
@@ -17,23 +19,35 @@ const protect = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
+    logger.warn("[Auth] No token provided in request");
     return next(
       new AppError("You are not logged in! Please log in to get access.", 401)
     );
   }
 
   // 2) Verify Token
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  let decoded;
+  try {
+    decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    logger.info(
+      `[Auth] Token verified for user: ${decoded.userId}, role: ${decoded.role}`
+    );
+  } catch (error) {
+    logger.error(`[Auth] Token verification failed: ${error.message}`);
+    return next(new AppError("Invalid token. Please log in again.", 401));
+  }
 
   // 3) Check Session in DB (Stateful)
   // We include sessionId in the JWT payload to link it to the DB session
   const session = await Session.findById(decoded.sessionId);
 
   if (!session || session.isRevoked) {
+    logger.warn(`[Auth] Invalid or revoked session: ${decoded.sessionId}`);
     return next(new AppError("Session is invalid or has been revoked.", 401));
   }
 
   if (session.expiresAt < Date.now()) {
+    logger.warn(`[Auth] Expired session: ${decoded.sessionId}`);
     return next(new AppError("Session has expired.", 401));
   }
 
@@ -53,6 +67,7 @@ const protect = catchAsync(async (req, res, next) => {
   }
 
   if (!currentUser) {
+    logger.warn(`[Auth] User no longer exists: ${decoded.userId}`);
     return next(
       new AppError("The user belonging to this token no longer exists.", 401)
     );
@@ -60,6 +75,8 @@ const protect = catchAsync(async (req, res, next) => {
 
   // 5) Check if user changed password after token was issued (Optional/Advanced)
   // if (currentUser.changedPasswordAfter(decoded.iat)) ...
+
+  logger.info(`[Auth] Authentication successful for user: ${currentUser._id}`);
 
   // GRANT ACCESS
   req.user = currentUser;

@@ -106,10 +106,27 @@ exports.addProvider = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllCodes = catchAsync(async (req, res, next) => {
-  const codes = await ActivationCode.find().sort({ createdAt: -1 });
-  res
-    .status(200)
-    .json({ success: true, message: "Codes retrieved", data: codes });
+  const logger = require("../utils/logger");
+
+  try {
+    logger.info(
+      `[getAllCodes] Request from user: ${req.user?._id}, role: ${req.user?.role}`
+    );
+
+    const codes = await ActivationCode.find().sort({ createdAt: -1 });
+
+    logger.info(`[getAllCodes] Successfully retrieved ${codes.length} codes`);
+
+    res
+      .status(200)
+      .json({ success: true, message: "Codes retrieved", data: codes });
+  } catch (error) {
+    logger.error(`[getAllCodes] Error: ${error.message}`, {
+      stack: error.stack,
+      userId: req.user?._id,
+    });
+    throw error; // Re-throw to be caught by catchAsync
+  }
 });
 
 exports.deleteCode = catchAsync(async (req, res, next) => {

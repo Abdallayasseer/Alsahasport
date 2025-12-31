@@ -18,10 +18,21 @@ class AdminService {
   }
 
   async createCode(adminId, { durationDays, maxDevices }) {
+    const logger = require("../utils/logger");
+
+    logger.info(
+      `[createCode] Request from admin: ${adminId}, duration: ${durationDays}, maxDevices: ${maxDevices}`
+    );
+
     const codeRaw = crypto.randomBytes(6).toString("hex").toUpperCase();
     const secret = process.env.ACTIVATION_SECRET;
-    if (!secret)
+
+    if (!secret) {
+      logger.error(
+        "[createCode] CRITICAL: ACTIVATION_SECRET environment variable is not set!"
+      );
       throw new AppError("Server Misconfiguration: No Activation Secret", 500);
+    }
 
     const codeHash = crypto
       .createHash("sha256")
@@ -42,6 +53,8 @@ class AdminService {
       process.env.JWT_SECRET,
       { expiresIn: "10m" }
     );
+
+    logger.info(`[createCode] Code created successfully: ${newCode._id}`);
 
     return {
       newCode,
