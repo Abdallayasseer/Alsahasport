@@ -1,5 +1,5 @@
 const PORT = process.env.PORT || 5000;
-const BASE_URL = `http://localhost:${PORT}/api`;
+const BASE_URL = process.env.API_URL || `http://localhost:${PORT}/api`;
 
 const colors = {
   reset: "\x1b[0m",
