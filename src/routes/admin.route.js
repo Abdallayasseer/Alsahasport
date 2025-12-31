@@ -10,13 +10,19 @@ const {
   addProvider,
   loginAdmin,
   displayCode,
+  revealCode,
+  getDashboardStats,
+  getWeeklyCodeStats,
+  getRecentActivity,
+  getSystemStatus,
 } = require("../controllers/admin.Controller");
 
 const {
   validateLogin,
   validateCreateCode,
   validateAddChannel,
-} = require("../middlewares/validate");
+  validateRevealCode,
+} = require("../validators/admin.validator");
 const { authLimiter } = require("../middlewares/rateLimiters");
 
 router.post("/login", authLimiter, validateLogin, loginAdmin);
@@ -35,11 +41,37 @@ router.get(
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
   displayCode
 );
+router.post(
+  "/codes/:id/reveal",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  validateRevealCode,
+  revealCode
+);
 router.get("/codes", restrictTo("MASTER_ADMIN", "DAILY_ADMIN"), getAllCodes);
-router.delete("/code/:id", restrictTo("MASTER_ADMIN"), deleteCode);
+router.delete("/codes/:id", restrictTo("MASTER_ADMIN"), deleteCode);
 
 // Monitoring
 router.get("/sessions/live", restrictTo("MASTER_ADMIN"), getLiveSessions);
+
+// Dashboard Stats
+router.get(
+  "/stats",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  getDashboardStats
+);
+router.get(
+  "/stats/weekly",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  getWeeklyCodeStats
+);
+router.get(
+  "/activity",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  getRecentActivity
+);
+
+// System Status
+router.get("/system/status", getSystemStatus);
 
 // Content Management
 router.post(

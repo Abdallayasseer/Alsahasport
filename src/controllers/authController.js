@@ -74,7 +74,18 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
     return next(err);
   }
 
-  const result = await AuthService.refreshToken(token);
+  let result;
+  try {
+    result = await AuthService.refreshToken(token);
+  } catch (err) {
+    // Critical: Clear cookies if refresh fails to stop the frontend loop
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+    return next(new AppError("Refresh failed: " + err.message, 401));
+  }
 
   // Send new Cookie
   res.cookie("refreshToken", result.refreshToken, {

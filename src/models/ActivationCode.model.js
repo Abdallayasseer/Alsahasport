@@ -5,13 +5,15 @@ const activationCodeSchema = new mongoose.Schema(
     codeHash: {
       type: String,
       required: true,
-      unique: true,
-      index: true,
       select: false,
     },
     durationDays: {
       type: Number,
       required: true,
+    },
+    codeEncrypted: {
+      type: String,
+      select: false, // Protected, only for master admin recovery
     },
     status: {
       type: String,

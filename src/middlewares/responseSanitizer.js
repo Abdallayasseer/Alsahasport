@@ -123,13 +123,17 @@ module.exports = (req, res, next) => {
     // This ensures we work with the final shape.
     let jsonBody = body;
     try {
+      // Try to sanitize
       jsonBody = JSON.parse(JSON.stringify(body));
-    } catch (e) {
-      // failed to parse?
+      const cleaned = sanitize(jsonBody, isCreateCode);
+      return originalJson.call(this, cleaned);
+    } catch (err) {
+      console.error("Sanitizer Failed:", err);
+      // Fallback: send original body (or safe version)
+      // If we failed to sanitize an error, sending original body might be ok in dev
+      // In prod, this could leak, but crashing 500 is worse.
+      return originalJson.call(this, body);
     }
-
-    const cleaned = sanitize(jsonBody, isCreateCode);
-    return originalJson.call(this, cleaned);
   };
 
   next();

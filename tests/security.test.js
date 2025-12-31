@@ -49,7 +49,6 @@ afterAll(async () => {
     await ActivationCode.deleteMany({ _id: createdCodeId });
   }
   await Admin.deleteMany({ username: "testadmin_sec" });
-  await mongoose.connection.close();
 });
 
 describe("Security Exposure Tests", () => {

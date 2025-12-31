@@ -10,7 +10,7 @@ const {
 } = require("../controllers/authController");
 
 const { protect } = require("../middlewares/auth");
-const { validateActivate } = require("../middlewares/validate");
+const { validateActivate } = require("../validators/auth.validator");
 const { authLimiter } = require("../middlewares/rateLimiters");
 
 router.post(
