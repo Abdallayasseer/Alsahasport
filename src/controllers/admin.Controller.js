@@ -53,35 +53,49 @@ exports.verifyMasterPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.createCode = catchAsync(async (req, res, next) => {
-  // 1. Generate Code Locally
-  const codeRaw = AdminService.generateRandomCode();
+  try {
+    // 1. Generate Code Locally
+    const codeRaw = AdminService.generateRandomCode();
 
-  // 2. Step 1 (External): Call Provider API
-  // If this fails, it throws an error (stopping the process)
-  // We do NOT catch it here, so it bubbles to global error handler (500/502)
-  await providerService.createLine(codeRaw);
+    // 2. Step 1 (External): Call Provider API
+    // If this fails, it throws an error (stopping the process)
+    await providerService.createLine(codeRaw);
 
-  // 3. Step 2 (Local): Create in MongoDB
-  const { newCode, displayToken } = await AdminService.createCodeInDB(
-    req.user._id,
-    req.body,
-    codeRaw
-  );
+    // 3. Step 2 (Local): Create in MongoDB
+    const { newCode, displayToken } = await AdminService.createCodeInDB(
+      req.user._id,
+      req.body,
+      codeRaw
+    );
 
-  res.status(201).json({
-    success: true,
-    message: "Code Created",
-    data: {
-      id: newCode._id,
-      code: codeRaw,
-      durationDays: newCode.durationDays,
-      status: "active",
-      maxDevices: newCode.maxDevices,
-      createdAt: newCode.createdAt,
-      displayToken,
-      expiresIn: "10m",
-    },
-  });
+    res.status(201).json({
+      success: true,
+      message: "Code Created",
+      data: {
+        id: newCode._id,
+        code: codeRaw,
+        durationDays: newCode.durationDays,
+        status: "active",
+        maxDevices: newCode.maxDevices,
+        createdAt: newCode.createdAt,
+        displayToken,
+        expiresIn: "10m",
+      },
+    });
+  } catch (error) {
+    // Provide a "safe" error to the frontend
+    // If providerService threw AppError(502/504), it will bubble up
+    // But we ensure we don't crash
+    // We can also re-throw if it is an AppError to let Global Error Handler manage it
+    // Or return JSON directly here
+    if (error.statusCode) {
+      return next(error);
+    }
+
+    // Unexpected error -> 500
+    // require("../utils/logger").error... (catchAsync does this usually)
+    return next(new AppError("Failed to create code: " + error.message, 500));
+  }
 });
 
 exports.displayCode = catchAsync(async (req, res, next) => {

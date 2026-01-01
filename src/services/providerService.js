@@ -20,11 +20,6 @@ class ProviderService {
       logger.info(`[ProviderService] Creating line for code: ${code}`);
 
       // Construct URL parameters for Xtream Codes API
-      // Adjust strictly based on standard XC Reseller API
-      // Typically: ?action=user&sub=create&username=USER&password=PASS&member_id=RESELLER_ID (or auth via login)
-      // Since we don't have exact docs, we'll try a common structure or assume the user expects a specific format.
-      // We will use a GET request which is common for older panels, or adapt as needed.
-
       const params = {
         username: RESELLER_USERNAME,
         password: RESELLER_PASSWORD,
@@ -33,7 +28,6 @@ class ProviderService {
         user_data: {
           username: code,
           password: code,
-          // Add other defaults if necessary, e.g., package_ids
         },
       };
 
@@ -44,13 +38,13 @@ class ProviderService {
           password: RESELLER_PASSWORD,
           action: "user",
           sub: "create",
-          user_msg: code, // Some use user_msg as username
+          user_msg: code,
           user_pass: code,
-          // generic fallback
           new_username: code,
           new_password: code,
           member_id: "RESELLER_ID_IF_NEEDED",
         },
+        timeout: 5000, // 5 Second Timeout
       });
 
       // Xtream UI / Xtream Codes V2 usually returns JSON
@@ -63,8 +57,21 @@ class ProviderService {
       logger.info(`[ProviderService] Line created successfully for: ${code}`);
       return response.data;
     } catch (error) {
-      logger.error(`[ProviderService] Error creating line: ${error.message}`);
-      throw new AppError(`Provider Error: ${error.message}`, 502);
+      // Enhanced Logging
+      const errorMsg = error.response?.data
+        ? JSON.stringify(error.response.data)
+        : error.message;
+
+      logger.error(
+        `[ProviderService] Error creating line: ${errorMsg}. Stack: ${error.stack}`
+      );
+
+      // Distinguish between timeout and other errors
+      if (error.code === "ECONNABORTED") {
+        throw new AppError("Provider Connection Timeout (5s)", 504);
+      }
+
+      throw new AppError(`Provider Error: ${errorMsg}`, 502);
     }
   }
 
