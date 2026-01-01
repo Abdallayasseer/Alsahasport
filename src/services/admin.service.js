@@ -149,12 +149,118 @@ class AdminService {
 
   async getDashboardStats() {
     const totalCodes = await ActivationCode.countDocuments();
+    // Assuming "Active Users" are codes that are currently 'active'
+    const totalUsers = await ActivationCode.countDocuments({
+      status: "active",
+    });
     const activeSessions = await Session.countDocuments();
+    const totalChannels = await Channel.countDocuments();
+
+    // Interactive sessions today (Active in last 24h)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const requestsToday = await Session.countDocuments({
+      lastActive: { $gte: startOfDay },
+    });
+
     const revenue = totalCodes * ESTIMATED_CODE_PRICE;
     const load = os.loadavg(); // Returns [1min, 5min, 15min]
     const serverLoad = load ? (load[0] * 10).toFixed(1) : 0; // Rough percentage estimation or raw value
 
-    return { totalCodes, activeSessions, revenue, serverLoad };
+    // Calculate Trends (Mock implementation for now, ideally would query historical data)
+    // For production, you'd want a separate Analytics Table or timeseries DB
+    const trends = {
+      users: 12, // +12%
+      sessions: 5, // +5%
+      codes: 8, // +8%
+      revenue: 8, // +8%
+    };
+
+    return {
+      totalCodes,
+      totalUsers,
+      activeSessions,
+      totalChannels,
+      requestsToday,
+      revenue,
+      serverLoad,
+      trends,
+    };
+  }
+
+  async getAnalyticsData() {
+    const now = new Date();
+    const last24h = new Date(now - 24 * 60 * 60 * 1000);
+    const last7Days = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+    // 1. Sessions History (Mocking "Active Sessions over time" via lastActive distribution)
+    // In a real app, you'd log "SessionStarted" events.
+    // Here we group active sessions by hour they were last active (proxy for activity)
+    const sessionsHistory = await Session.aggregate([
+      { $match: { lastActive: { $gte: last24h } } },
+      {
+        $group: {
+          _id: { $hour: "$lastActive" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Fill missing hours for last 24h
+    const sessionsChart = Array.from({ length: 24 }, (_, i) => {
+      const hour = (now.getHours() - (24 - i - 1) + 24) % 24;
+      const found = sessionsHistory.find((h) => h._id === hour);
+      return {
+        time: `${hour}:00`,
+        value: found ? found.count : 0, // Fallback to 0 or baseline
+      };
+    });
+
+    // 2. Codes Created History (Daily)
+    const codesHistory = await ActivationCode.aggregate([
+      { $match: { createdAt: { $gte: last7Days } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Fill missing days
+    const codesChart = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const dateStr = d.toISOString().split("T")[0];
+      const found = codesHistory.find((c) => c._id === dateStr);
+      return {
+        date: d.toLocaleDateString("en-US", { weekday: "short" }),
+        value: found ? found.count : 0,
+      };
+    });
+
+    // 3. Role Distribution
+    const roleStats = await Session.aggregate([
+      {
+        $group: {
+          _id: "$role",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const roleDistribution = roleStats.map((r) => ({
+      name: r._id,
+      value: r.count,
+    }));
+
+    return {
+      sessionsChart,
+      codesChart,
+      roleDistribution,
+    };
   }
 
   async getWeeklyStats() {

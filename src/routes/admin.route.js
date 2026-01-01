@@ -78,6 +78,12 @@ router.get(
   getRecentActivity
 );
 
+router.get(
+  "/analytics",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  require("../controllers/admin.Controller").getAnalyticsData
+);
+
 // System Status
 router.get("/system/status", getSystemStatus);
 

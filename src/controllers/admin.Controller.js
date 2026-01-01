@@ -107,6 +107,11 @@ exports.getWeeklyCodeStats = catchAsync(async (req, res, next) => {
   res.status(200).json({ success: true, data: stats });
 });
 
+exports.getAnalyticsData = catchAsync(async (req, res, next) => {
+  const data = await AdminService.getAnalyticsData();
+  res.status(200).json({ success: true, data });
+});
+
 exports.getRecentActivity = catchAsync(async (req, res, next) => {
   const activity = await AdminService.getRecentActivity();
   res.status(200).json({ success: true, data: activity });
