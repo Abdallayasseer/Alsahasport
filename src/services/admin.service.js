@@ -168,40 +168,44 @@ class AdminService {
   }
 
   async getDashboardStats() {
-    const totalCodes = await ActivationCode.countDocuments();
-    // Assuming "Active Users" are codes that are currently 'active'
-    const totalUsers = await ActivationCode.countDocuments({
-      status: "active",
-    });
-    const activeSessions = await Session.countDocuments();
-
-    // Interactive sessions today (Active in last 24h)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const requestsToday = await Session.countDocuments({
-      lastActive: { $gte: startOfDay },
-    });
+
+    const [
+      totalCodes,
+      activeUsers,
+      activeSessions,
+      expiredCodes,
+      requestsToday,
+    ] = await Promise.all([
+      ActivationCode.countDocuments(),
+      ActivationCode.countDocuments({ status: "active" }),
+      Session.countDocuments(),
+      ActivationCode.countDocuments({ expirationDate: { $lt: new Date() } }),
+      Session.countDocuments({ lastActive: { $gte: startOfDay } }),
+    ]);
 
     const revenue = totalCodes * ESTIMATED_CODE_PRICE;
-    const load = os.loadavg(); // Returns [1min, 5min, 15min]
-    const serverLoad = load ? (load[0] * 10).toFixed(1) : 0; // Rough percentage estimation or raw value
+    const load = os.loadavg();
+    const serverLoad = load ? (load[0] * 10).toFixed(1) : 0;
 
-    // Calculate Trends (Mock implementation for now, ideally would query historical data)
-    // For production, you'd want a separate Analytics Table or timeseries DB
+    // Mock Trends
     const trends = {
-      users: 12, // +12%
-      sessions: 5, // +5%
-      codes: 8, // +8%
-      revenue: 8, // +8%
+      users: 12,
+      sessions: 5,
+      codes: 8,
+      revenue: 8,
     };
 
     return {
       totalCodes,
-      totalUsers,
+      totalUsers: activeUsers,
       activeSessions,
+      expiredCodes,
       requestsToday,
       revenue,
       serverLoad,
+      serverStatus: "Online", // Explicitly requested
       trends,
     };
   }
