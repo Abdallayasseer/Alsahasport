@@ -1,5 +1,4 @@
 const AdminService = require("../services/admin.service");
-const providerService = require("../services/providerService");
 const ActivationCode = require("../models/ActivationCode.model");
 // Channels and Providers removed
 const Session = require("../models/Session.model");
@@ -57,9 +56,8 @@ exports.createCode = catchAsync(async (req, res, next) => {
     // 1. Generate Code Locally
     const codeRaw = AdminService.generateRandomCode();
 
-    // 2. Step 1 (External): Call Provider API
-    // If this fails, it throws an error (stopping the process)
-    await providerService.createLine(codeRaw);
+    // 2. Step 1 (External): Call Provider API - REMOVED for now
+    // await providerService.createLine(codeRaw);
 
     // 3. Step 2 (Local): Create in MongoDB
     const { newCode, displayToken } = await AdminService.createCodeInDB(

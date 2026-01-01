@@ -5,7 +5,6 @@ const Session = require("../models/Session.model");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const providerService = require("./providerService");
 const { encryptCode, decryptCode } = require("../utils/encryption");
 const AppError = require("../utils/AppError");
 
@@ -147,20 +146,20 @@ class AdminService {
       throw new AppError("No code found with that ID", 404);
     }
 
-    // Attempt to delete from Provider (Xtream Panel)
-    try {
-      if (codeDoc.codeEncrypted) {
-        const decryptedCode = decryptCode(codeDoc.codeEncrypted);
-        if (decryptedCode) {
-          await providerService.deleteLine(decryptedCode);
-        }
-      }
-    } catch (error) {
-      require("../utils/logger").error(
-        `Failed to delete line from provider: ${error.message}`
-      );
-      // Continue local deletion
-    }
+    // Attempt to delete from Provider (Xtream Panel) - REMOVED for now
+    // try {
+    //   if (codeDoc.codeEncrypted) {
+    //     const decryptedCode = decryptCode(codeDoc.codeEncrypted);
+    //     if (decryptedCode) {
+    //       await providerService.deleteLine(decryptedCode);
+    //     }
+    //   }
+    // } catch (error) {
+    //   require("../utils/logger").error(
+    //     `Failed to delete line from provider: ${error.message}`
+    //   );
+    //   // Continue local deletion
+    // }
 
     await ActivationCode.findByIdAndDelete(codeId);
     await Session.deleteMany({ userId: codeId });
@@ -171,21 +170,27 @@ class AdminService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
+    // Business Rules Implementation
+    // 1. Total Code Count (ALL codes)
+    // 2. Active Sessions (ALL sessions)
+    // 3. Total Users (Activated: status != "unused")
     const [
       totalCodes,
-      activeUsers,
+      totalUsers,
       activeSessions,
       expiredCodes,
       requestsToday,
     ] = await Promise.all([
       ActivationCode.countDocuments(),
-      ActivationCode.countDocuments({ status: "active" }),
+      ActivationCode.countDocuments({ status: { $ne: "unused" } }),
       Session.countDocuments(),
-      ActivationCode.countDocuments({ expirationDate: { $lt: new Date() } }),
+      ActivationCode.countDocuments({ status: "expired" }),
       Session.countDocuments({ lastActive: { $gte: startOfDay } }),
     ]);
 
-    const revenue = totalCodes * ESTIMATED_CODE_PRICE;
+    // 4. Revenue: Total Users * 3.82
+    const revenue = totalUsers * 3.82;
+
     const load = os.loadavg();
     const serverLoad = load ? (load[0] * 10).toFixed(1) : 0;
 
@@ -199,13 +204,13 @@ class AdminService {
 
     return {
       totalCodes,
-      totalUsers: activeUsers,
+      totalUsers,
       activeSessions,
       expiredCodes,
       requestsToday,
-      revenue,
+      revenue, // Sending as number
       serverLoad,
-      serverStatus: "Online", // Explicitly requested
+      serverStatus: "Online",
       trends,
     };
   }
