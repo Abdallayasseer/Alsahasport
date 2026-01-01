@@ -68,10 +68,13 @@ class ProviderService {
 
       // Distinguish between timeout and other errors
       if (error.code === "ECONNABORTED") {
-        throw new AppError("Provider Connection Timeout (5s)", 504);
+        throw new AppError(
+          "Provider Connection Timeout (5s) - Please try again later",
+          503
+        );
       }
 
-      throw new AppError(`Provider Error: ${errorMsg}`, 502);
+      throw new AppError(`Provider Unavailable: ${errorMsg}`, 503);
     }
   }
 
