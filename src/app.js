@@ -21,6 +21,9 @@ connectDB();
 
 const app = express();
 
+// Trust Proxy for Railway/Vercel
+app.set("trust proxy", 1);
+
 // 1. Global Middleware
 
 // Set security HTTP headers

@@ -4,3 +4,25 @@
 2025-12-31 11:53:36 error: [Error Handler] You are not logged in! Please log in to get access.
 2025-12-31 11:53:36 error: [Error Handler] Invalid Code
 2025-12-31 18:14:20 error: [Error Handler] Invalid username or password
+2026-01-01 07:17:58 error: [Auth] Token verification failed: jwt malformed
+2026-01-01 07:17:58 error: [Error Handler] Invalid token. Please log in again.
+2026-01-01 07:17:58 error: [Auth] Token verification failed: jwt malformed
+2026-01-01 07:17:58 error: [Error Handler] Invalid token. Please log in again.
+2026-01-01 07:17:59 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:17:59 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:18:11 error: [Auth] Token verification failed: jwt malformed
+2026-01-01 07:18:11 error: [Error Handler] Invalid token. Please log in again.
+2026-01-01 07:18:11 error: [Auth] Token verification failed: jwt malformed
+2026-01-01 07:18:11 error: [Error Handler] Invalid token. Please log in again.
+2026-01-01 07:18:13 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:18:13 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:18:40 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:18:40 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:19:18 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:19:18 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:19:42 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:19:42 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:20:28 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:20:28 error: [Error Handler] Token mismatch for this Code ID
+2026-01-01 07:21:30 error: [Error Handler] Code already displayed. Cannot be viewed again.
+2026-01-01 07:21:30 error: [Error Handler] Token mismatch for this Code ID

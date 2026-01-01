@@ -8,15 +8,20 @@ const AppError = require("../utils/AppError");
 
 // Auth Helper
 const { createSessionAndSend } = require("./authController");
+const { getRealIp } = require("../utils/ipUtils");
+const { analyzeIpConfidence } = require("../utils/ipDetection");
 
 exports.loginAdmin = catchAsync(async (req, res, next) => {
-  const { username, password } = req.body;
+  const { username, password, clientPublicIp } = req.body;
   const admin = await AdminService.authenticate(username, password);
+
+  const proxyIp = getRealIp(req);
+  const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
 
   await createSessionAndSend(
     admin,
     "admin-browser",
-    req.ip,
+    ipData,
     req.headers["user-agent"],
     res,
     admin.role
@@ -84,11 +89,7 @@ exports.displayCode = catchAsync(async (req, res, next) => {
 });
 
 exports.revealCode = catchAsync(async (req, res, next) => {
-  const rawCode = await AdminService.revealCode(
-    req.user._id,
-    req.params.id,
-    req.body.password
-  );
+  const rawCode = await AdminService.revealCode(req.user._id, req.params.id);
 
   res.status(200).json({
     success: true,
@@ -154,13 +155,7 @@ exports.getAllCodes = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteCode = catchAsync(async (req, res, next) => {
-  const { password } = req.body;
-  if (!password) {
-    return next(
-      new AppError("Master Admin password required for deletion", 400)
-    );
-  }
-  await AdminService.deleteCode(req.user._id, req.params.id, password);
+  await AdminService.deleteCode(req.user._id, req.params.id);
   res.status(200).json({ success: true, message: "Code deleted successfully" });
 });
 

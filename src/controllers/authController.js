@@ -1,6 +1,8 @@
 const AuthService = require("../services/auth.service");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { getRealIp } = require("../utils/ipUtils");
+const { analyzeIpConfidence } = require("../utils/ipDetection");
 
 const {
   refreshSchema,
@@ -10,13 +12,21 @@ const {
 const createSessionAndSend = async (
   user,
   deviceId,
-  ip,
+  ipData, // Changed from 'ip' to 'ipData' object or handled internally
   userAgent,
   res,
   role = "user"
 ) => {
+  // ipData can be { clientPublicIp, proxyDetectedIp, ipConfidence, bestIp }
   const { accessToken, refreshToken, expiresAt, session } =
-    await AuthService.createSession(user, role, deviceId, ip, userAgent);
+    await AuthService.createSession(
+      user,
+      role,
+      deviceId,
+      ipData.bestIp,
+      userAgent,
+      ipData
+    );
 
   // Send Cookie
   res.cookie("refreshToken", refreshToken, {
@@ -49,12 +59,15 @@ exports.completeLogin = catchAsync(async (req, res, next) => {
   }
 
   // Validate Input
-  const { deviceId } = loginSchema.parse(req.body);
+  const { deviceId, clientPublicIp } = loginSchema.parse(req.body);
+
+  const proxyIp = getRealIp(req);
+  const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
 
   await createSessionAndSend(
     user,
     deviceId,
-    req.ip,
+    ipData,
     req.headers["user-agent"],
     res,
     "user"

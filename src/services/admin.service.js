@@ -8,6 +8,9 @@ const jwt = require("jsonwebtoken");
 const { encryptCode, decryptCode } = require("../utils/encryption");
 const AppError = require("../utils/AppError");
 
+const os = require("os");
+const ESTIMATED_CODE_PRICE = 10; // TODO: Move to DB/Config later
+
 class AdminService {
   async authenticate(username, password) {
     const admin = await Admin.findOne({ username }).select("+password");
@@ -117,13 +120,7 @@ class AdminService {
     }
   }
 
-  async revealCode(adminId, codeId, password) {
-    // Verify Admin Password
-    const admin = await Admin.findById(adminId).select("+password");
-    if (!admin || !(await bcrypt.compare(password, admin.password))) {
-      throw new AppError("Incorrect password", 401);
-    }
-
+  async revealCode(adminId, codeId) {
     // Fetch Code
     const codeDoc = await ActivationCode.findById(codeId).select(
       "+codeEncrypted"
@@ -141,43 +138,21 @@ class AdminService {
     }
   }
 
-  async deleteCode(adminId, codeId, password) {
-    console.log(
-      `[deleteCode] Verification attempt. AdminID: ${adminId}, CodeID: ${codeId}`
-    );
-    const admin = await Admin.findById(adminId).select("+password");
-    console.log(`[deleteCode] Admin found: ${!!admin}`);
-
-    if (!admin) {
-      console.log("[deleteCode] Admin not found");
-      throw new AppError("Admin not found", 404);
-    }
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    console.log(`[deleteCode] Password match result: ${isMatch}`);
-
-    if (!isMatch) {
-      console.log("[deleteCode] Password verification failed. Throwing 401.");
-      throw new AppError(
-        "Incorrect password. Master Admin verification failed.",
-        401
-      );
-    }
-
-    console.log("[deleteCode] Password verified. Proceeding to delete.");
+  async deleteCode(adminId, codeId) {
     const code = await ActivationCode.findByIdAndDelete(codeId);
     if (!code) {
       throw new AppError("No code found with that ID", 404);
     }
-    await Session.findOneAndDelete({ codeId: codeId });
+    await Session.deleteMany({ userId: codeId });
     return true;
   }
 
   async getDashboardStats() {
     const totalCodes = await ActivationCode.countDocuments();
     const activeSessions = await Session.countDocuments();
-    const revenue = totalCodes * 10;
-    const serverLoad = Math.floor(Math.random() * 30) + 10;
+    const revenue = totalCodes * ESTIMATED_CODE_PRICE;
+    const load = os.loadavg(); // Returns [1min, 5min, 15min]
+    const serverLoad = load ? (load[0] * 10).toFixed(1) : 0; // Rough percentage estimation or raw value
 
     return { totalCodes, activeSessions, revenue, serverLoad };
   }

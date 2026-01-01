@@ -6,6 +6,7 @@ const refreshSchema = z.object({
 
 const loginSchema = z.object({
   deviceId: z.string().optional(),
+  clientPublicIp: z.string().optional(),
 });
 
 module.exports = {

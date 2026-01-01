@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const app = require("../src/app");
 const ActivationCode = require("../src/models/ActivationCode.model");
 const Admin = require("../src/models/Admin.model");
+const connectDB = require("../src/config/db");
 
 // Increase timeout for DB
 jest.setTimeout(30000);
@@ -15,7 +16,7 @@ let createdCodeId;
 beforeAll(async () => {
   // Wait for DB connection
   if (mongoose.connection.readyState === 0) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await connectDB();
   }
 
   try {
@@ -37,11 +38,11 @@ beforeAll(async () => {
     .post("/api/admin/login")
     .send({ username: "testadmin_sec", password: "password123" });
 
-  if (!res.body.success) {
+  if (res.body.status !== "success") {
     console.error("Login Failed:", res.body);
   }
 
-  adminToken = res.body.data.token;
+  adminToken = res.body.accessToken;
 });
 
 afterAll(async () => {
@@ -58,26 +59,17 @@ describe("Security Exposure Tests", () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ durationDays: 30, maxDevices: 1 });
 
-    if (res.status !== 201) {
-      console.log(
-        "Create Code Failed:",
-        res.status,
-        JSON.stringify(res.body, null, 2)
-      );
-    }
+    createdCodeId = res.body.data?.id;
+
     expect(res.status).toBe(201);
     expect(res.body.data.code).toBeDefined(); // Raw code returned
     expect(res.body.data.code.length).toBeGreaterThan(5);
     expect(res.body.data.codeHash).toBeUndefined(); // Hash NOT returned
 
-    createdCodeId = res.body.data._id;
-
     // Verify DB State
     const doc = await ActivationCode.findById(createdCodeId).select(
       "+codeHash"
     );
-    // Note: doc.code should NOT exist in the Mongoose Document if removed from schema
-    // Mongoose might store it in strict:false, but our schema is strict (default).
     expect(doc.toObject().code).toBeUndefined();
     expect(doc.codeHash).toBeDefined();
     expect(doc.codeHash).not.toEqual(res.body.data.code);

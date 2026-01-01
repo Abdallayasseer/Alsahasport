@@ -31,7 +31,14 @@ const sessionSchema = new mongoose.Schema(
       index: true,
     },
     userAgent: String,
-    ipAddress: String,
+    ipAddress: String, // Kept for backward compatibility (stores best guess)
+    clientPublicIp: String,
+    proxyDetectedIp: String,
+    ipConfidence: {
+      type: String,
+      enum: ["HIGH", "MEDIUM", "LOW"],
+      default: "LOW",
+    },
     deviceId: { type: String, required: true },
     lastActive: {
       type: Date,

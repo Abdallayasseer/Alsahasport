@@ -26,7 +26,14 @@ class AuthService {
     });
   }
 
-  async createSession(user, role, deviceId, ip, userAgent) {
+  async createSession(
+    user,
+    role,
+    deviceId,
+    ip, // This will now be the "bestIp" for backward compatibility
+    userAgent,
+    ipData = {} // { clientPublicIp, proxyDetectedIp, ipConfidence }
+  ) {
     // 1. Enforce Single Session for Admins
     if (role !== "user") {
       await Session.updateMany(
@@ -53,9 +60,13 @@ class AuthService {
       role,
       refreshTokenHash,
       deviceId: deviceId || "unknown",
-      ipAddress: ip,
       userAgent,
       expiresAt,
+      // IP Fields
+      ipAddress: ip,
+      clientPublicIp: ipData.clientPublicIp,
+      proxyDetectedIp: ipData.proxyDetectedIp,
+      ipConfidence: ipData.ipConfidence || "LOW",
     });
 
     // 5. Create Access Token

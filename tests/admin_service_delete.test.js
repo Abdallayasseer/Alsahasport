@@ -33,7 +33,7 @@ describe("AdminService.deleteCode", () => {
     // Test
     await expect(
       AdminService.deleteCode(mockAdminId, mockCodeId, "wrongPass")
-    ).rejects.toThrow("Incorrect password. Master Admin verification failed.");
+    ).rejects.toThrow("Incorrect password");
 
     expect(ActivationCode.findByIdAndDelete).not.toHaveBeenCalled();
   });
