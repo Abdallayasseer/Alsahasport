@@ -1,7 +1,7 @@
 const AdminService = require("../services/admin.service");
+const providerService = require("../services/providerService");
 const ActivationCode = require("../models/ActivationCode.model");
-const Channel = require("../models/Channel.model");
-const StreamProvider = require("../models/StreamProvider");
+// Channels and Providers removed
 const Session = require("../models/Session.model");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
@@ -53,9 +53,19 @@ exports.verifyMasterPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.createCode = catchAsync(async (req, res, next) => {
-  const { newCode, codeRaw, displayToken } = await AdminService.createCode(
+  // 1. Generate Code Locally
+  const codeRaw = AdminService.generateRandomCode();
+
+  // 2. Step 1 (External): Call Provider API
+  // If this fails, it throws an error (stopping the process)
+  // We do NOT catch it here, so it bubbles to global error handler (500/502)
+  await providerService.createLine(codeRaw);
+
+  // 3. Step 2 (Local): Create in MongoDB
+  const { newCode, displayToken } = await AdminService.createCodeInDB(
     req.user._id,
-    req.body
+    req.body,
+    codeRaw
   );
 
   res.status(201).json({
@@ -115,24 +125,6 @@ exports.getAnalyticsData = catchAsync(async (req, res, next) => {
 exports.getRecentActivity = catchAsync(async (req, res, next) => {
   const activity = await AdminService.getRecentActivity();
   res.status(200).json({ success: true, data: activity });
-});
-
-exports.addChannel = catchAsync(async (req, res, next) => {
-  const channel = await Channel.create(req.body);
-  res.status(201).json({
-    success: true,
-    message: "Channel Added",
-    data: channel,
-  });
-});
-
-exports.addProvider = catchAsync(async (req, res, next) => {
-  const provider = await StreamProvider.create(req.body);
-  res.status(201).json({
-    success: true,
-    message: "Provider added",
-    data: provider,
-  });
 });
 
 exports.getAllCodes = catchAsync(async (req, res, next) => {

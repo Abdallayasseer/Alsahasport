@@ -12,7 +12,7 @@ const { apiLimiter } = require("./middlewares/rateLimiters");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.route");
 const adminRoutes = require("./routes/admin.route");
-const streamRoutes = require("./routes/stream.route");
+
 const AppError = require("./utils/AppError");
 const globalErrorHandler = require("./middlewares/error");
 const logger = require("./utils/logger");
@@ -104,7 +104,6 @@ app.use(require("./middlewares/responseSanitizer"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/stream", streamRoutes);
 
 // 404 Handler
 app.all(/(.*)/, (req, res, next) => {

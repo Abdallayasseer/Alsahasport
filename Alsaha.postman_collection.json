@@ -45,9 +45,15 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/activate",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "activate"]
-            }
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "activate"
+              ]
+            },
+            "description": "\nRedeems an activation code and returns session tokens + Provider Credentials.\n\n**Response Example:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"token\": \"jwt...\",\n    \"subscription\": {\n      \"status\": \"Active\",\n      \"host_url\": \"http://provider.com\",\n      \"username\": \"UserCode\",\n      \"password\": \"UserCode\"\n    }\n  }\n}\n```\n        "
           },
           "response": []
         },
@@ -83,8 +89,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "refresh"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
             },
             "description": "Send refresh token in body if cookies not automatically handled by client"
           },
@@ -97,8 +108,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/auth/validate",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "validate"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "validate"
+              ]
             }
           },
           "response": []
@@ -110,8 +126,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           },
           "response": []
@@ -156,8 +177,13 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/admin/login",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "login"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "login"
+                  ]
                 }
               },
               "response": []
@@ -200,9 +226,15 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/admin/codes",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "codes"]
-                }
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "codes"
+                  ]
+                },
+                "description": "Generates a random code locally AND triggers the Provider API to create a new line/user externally."
               },
               "response": []
             },
@@ -226,8 +258,15 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/admin/code/{{code_id}}/display?token={{display_token}}",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "code", "{{code_id}}", "display"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "code",
+                    "{{code_id}}",
+                    "display"
+                  ],
                   "query": [
                     {
                       "key": "token",
@@ -246,8 +285,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/admin/codes",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "codes"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "codes"
+                  ]
                 }
               },
               "response": []
@@ -259,15 +303,22 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/admin/code/:id",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "code", ":id"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "code",
+                    ":id"
+                  ],
                   "variable": [
                     {
                       "key": "id",
                       "value": "{{code_id}}"
                     }
                   ]
-                }
+                },
+                "description": "Deletes the code locally AND deletes/bans the user on the Provider Panel."
               },
               "response": []
             }
@@ -283,112 +334,19 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/admin/sessions/live",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "sessions", "live"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "sessions",
+                    "live"
+                  ]
                 }
               },
               "response": []
             }
           ]
-        },
-        {
-          "name": "Content Management",
-          "item": [
-            {
-              "name": "Add Channel",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Sports 1 HD\",\n    \"category\": \"Sports\",\n    \"streamUrl\": \"http://example.com/stream.m3u8\",\n    \"logoUrl\": \"http://example.com/logo.png\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/admin/channels",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "channels"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Add Provider",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Provider X\",\n    \"type\": \"xtream\",\n    \"dns\": \"http://provider-x.com\",\n    \"username\": \"admin\",\n    \"password\": \"pass\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{base_url}}/admin/provider",
-                  "host": ["{{base_url}}"],
-                  "path": ["admin", "provider"]
-                }
-              },
-              "response": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Stream",
-      "item": [
-        {
-          "name": "Get Channels",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/stream/channels",
-              "host": ["{{base_url}}"],
-              "path": ["stream", "channels"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Categories",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/stream/categories",
-              "host": ["{{base_url}}"],
-              "path": ["stream", "categories"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Channel Stream",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/stream/channel/:id",
-              "host": ["{{base_url}}"],
-              "path": ["stream", "channel", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "channel_id_here"
-                }
-              ]
-            }
-          },
-          "response": []
         }
       ]
     }

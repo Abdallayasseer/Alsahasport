@@ -2,6 +2,7 @@ const AuthService = require("../services/auth.service");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 const { getRealIp } = require("../utils/ipUtils");
+const { decryptCode } = require("../utils/encryption");
 const { analyzeIpConfidence } = require("../utils/ipDetection");
 
 const {
@@ -35,6 +36,33 @@ const createSessionAndSend = async (
     expires: expiresAt,
     sameSite: "Strict",
   });
+
+  // Handle Client/User Login Response (Provider Handoff)
+  if (role === "user") {
+    let rawCode = "";
+    if (user.codeEncrypted) {
+      try {
+        rawCode = decryptCode(user.codeEncrypted);
+      } catch (e) {
+        require("../utils/logger").error(
+          "Failed to decrypt code for login response"
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: accessToken,
+        subscription: {
+          status: "Active",
+          host_url: process.env.PROVIDER_API_URL,
+          username: rawCode,
+          password: rawCode,
+        },
+      },
+    });
+  }
 
   res.status(200).json({
     status: "success",

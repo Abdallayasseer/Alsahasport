@@ -3,11 +3,9 @@ const router = express.Router();
 const { protect, restrictTo } = require("../middlewares/auth");
 const {
   createCode,
-  addChannel,
   getAllCodes,
   deleteCode,
   getLiveSessions,
-  addProvider,
   loginAdmin,
   displayCode,
   revealCode,
@@ -20,7 +18,7 @@ const {
 const {
   validateLogin,
   validateCreateCode,
-  validateAddChannel,
+
   validateRevealCode,
 } = require("../validators/admin.validator");
 const { authLimiter } = require("../middlewares/rateLimiters");
@@ -88,12 +86,5 @@ router.get(
 router.get("/system/status", getSystemStatus);
 
 // Content Management
-router.post(
-  "/channels",
-  restrictTo("MASTER_ADMIN"),
-  validateAddChannel,
-  addChannel
-);
-router.post("/provider", restrictTo("MASTER_ADMIN"), addProvider);
 
 module.exports = router;

@@ -26,7 +26,9 @@ exports.redeemCodeAtomic = catchAsync(async (req, res, next) => {
 
     const codeDoc = await ActivationCode.findOne({
       codeHash: hashedCode,
-    }).session(session);
+    })
+      .select("+codeEncrypted")
+      .session(session);
 
     if (!codeDoc) {
       throw new AppError("Invalid Code", 404);

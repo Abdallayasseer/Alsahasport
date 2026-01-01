@@ -1,10 +1,11 @@
 const ActivationCode = require("../models/ActivationCode.model");
-const Channel = require("../models/Channel.model");
+
 const Admin = require("../models/Admin.model");
 const Session = require("../models/Session.model");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const providerService = require("./providerService");
 const { encryptCode, decryptCode } = require("../utils/encryption");
 const AppError = require("../utils/AppError");
 
@@ -28,14 +29,15 @@ class AdminService {
     return true;
   }
 
-  async createCode(adminId, { durationDays, maxDevices }) {
+  generateRandomCode() {
+    return crypto.randomBytes(6).toString("hex").toUpperCase();
+  }
+
+  async createCodeInDB(adminId, { durationDays, maxDevices }, codeRaw) {
     const logger = require("../utils/logger");
 
-    logger.info(
-      `[createCode] Request from admin: ${adminId}, duration: ${durationDays}, maxDevices: ${maxDevices}`
-    );
+    logger.info(`[createCodeInDB] Saving code for admin: ${adminId}`);
 
-    const codeRaw = crypto.randomBytes(6).toString("hex").toUpperCase();
     let secret = process.env.ACTIVATION_SECRET;
 
     if (!secret) {
@@ -65,7 +67,7 @@ class AdminService {
       durationDays,
       maxDevices: maxDevices || 1,
       createdBy: adminId,
-      codeEncrypted: encryptCode(codeRaw),
+      codeEncrypted: encryptCode(codeRaw), // Encrypt Raw Code
     });
 
     const encryptedRaw = encryptCode(codeRaw);
@@ -79,7 +81,6 @@ class AdminService {
 
     return {
       newCode,
-      codeRaw,
       displayToken,
     };
   }
@@ -139,10 +140,29 @@ class AdminService {
   }
 
   async deleteCode(adminId, codeId) {
-    const code = await ActivationCode.findByIdAndDelete(codeId);
-    if (!code) {
+    const codeDoc = await ActivationCode.findById(codeId).select(
+      "+codeEncrypted"
+    );
+    if (!codeDoc) {
       throw new AppError("No code found with that ID", 404);
     }
+
+    // Attempt to delete from Provider (Xtream Panel)
+    try {
+      if (codeDoc.codeEncrypted) {
+        const decryptedCode = decryptCode(codeDoc.codeEncrypted);
+        if (decryptedCode) {
+          await providerService.deleteLine(decryptedCode);
+        }
+      }
+    } catch (error) {
+      require("../utils/logger").error(
+        `Failed to delete line from provider: ${error.message}`
+      );
+      // Continue local deletion
+    }
+
+    await ActivationCode.findByIdAndDelete(codeId);
     await Session.deleteMany({ userId: codeId });
     return true;
   }
@@ -154,7 +174,6 @@ class AdminService {
       status: "active",
     });
     const activeSessions = await Session.countDocuments();
-    const totalChannels = await Channel.countDocuments();
 
     // Interactive sessions today (Active in last 24h)
     const startOfDay = new Date();
@@ -180,7 +199,6 @@ class AdminService {
       totalCodes,
       totalUsers,
       activeSessions,
-      totalChannels,
       requestsToday,
       revenue,
       serverLoad,
@@ -284,7 +302,6 @@ class AdminService {
       .sort({ createdAt: -1 })
       .limit(5)
       .populate("createdBy", "username");
-    const newChannels = await Channel.find().sort({ createdAt: -1 }).limit(5);
 
     const activity = [
       ...newCodes.map((c) => ({
@@ -294,14 +311,6 @@ class AdminService {
         time: c.createdAt,
         status: "primary",
         details: `Created by ${c.createdBy?.username || "Admin"}`,
-      })),
-      ...newChannels.map((c) => ({
-        id: c._id,
-        type: "CHANNEL_ADDED",
-        title: `New Channel '${c.name}' Added`,
-        time: c.createdAt,
-        status: "success",
-        details: c.category,
       })),
     ]
       .sort((a, b) => new Date(b.time) - new Date(a.time))
