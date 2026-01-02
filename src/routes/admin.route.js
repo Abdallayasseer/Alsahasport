@@ -10,6 +10,7 @@ const {
   revealCode,
   getDashboardData,
   getSystemStatus,
+  getLiveSessions,
 } = require("../controllers/admin.Controller");
 
 const {
@@ -51,6 +52,12 @@ router.post(
 );
 router.get("/codes", restrictTo("MASTER_ADMIN", "DAILY_ADMIN"), getAllCodes);
 router.delete("/codes/:id", restrictTo("MASTER_ADMIN"), deleteCode);
+
+router.get(
+  "/sessions/live",
+  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
+  getLiveSessions
+);
 
 // Dashboard Stats
 // Consolidated Dashboard Endpoint

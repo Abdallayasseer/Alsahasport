@@ -268,3 +268,18 @@ exports.getSystemStatus = catchAsync(async (req, res, next) => {
     },
   });
 });
+exports.getLiveSessions = catchAsync(async (req, res, next) => {
+  const sessions = await Session.find()
+    .populate("userId", "username email role")
+    .sort({ lastActive: -1 })
+    .limit(50) // Reasonable limit for "live" view
+    .lean();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      count: sessions.length,
+      sessions,
+    },
+  });
+});
