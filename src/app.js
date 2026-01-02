@@ -32,7 +32,7 @@ app.use(helmet());
 // Implement CORS (Strict Whitelist)
 const whitelist = process.env.CORS_WHITELIST
   ? process.env.CORS_WHITELIST.split(",")
-  : [process.env.FRONTEND_URL];
+  : [process.env.FRONTEND_URL, "https://alsahasport-admin.vercel.app"];
 
 const corsOptions = {
   origin: function (origin, callback) {
