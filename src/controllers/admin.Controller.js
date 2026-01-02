@@ -27,6 +27,116 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
   );
 });
 
+exports.getDashboardData = catchAsync(async (req, res, next) => {
+  // 1. Run all counts in parallel for performance
+  const [
+    totalCodes,
+    activeSessions, // "Count of all documents in Session model"
+    totalUsers, // Codes where isActivated=true (status != 'unused')
+    recentActivityCodes,
+    recentSessions,
+  ] = await Promise.all([
+    ActivationCode.countDocuments(),
+    Session.countDocuments(),
+    ActivationCode.countDocuments({ status: { $ne: "unused" } }),
+    ActivationCode.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("createdBy", "username")
+      .lean(),
+    Session.find().sort({ lastActive: -1 }).limit(5).populate("userId").lean(),
+  ]);
+
+  // 2. Revenue Calculation (Strict Rule: totalUsers * 3.82)
+  const revenue = totalUsers * 3.82;
+
+  // 3. Format Recent Activity (Standardized)
+  const activity = recentActivityCodes.map((code) => ({
+    id: code._id,
+    title: "Code Created",
+    time: code.createdAt,
+    status: "success",
+    type: "CODE_CREATED",
+    details: `Standard Package (Created by ${
+      code.createdBy?.username || "Admin"
+    })`,
+  }));
+
+  // 4. Analytics Helpers (Simple daily distribution for now)
+  // Real implementation would use aggregation, but keeping it robust & simple as requested
+  // This replaces separate /analytics call
+  const now = new Date();
+  const last7Days = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+  const [weeklyCodeStats, sessionsHistory] = await Promise.all([
+    ActivationCode.aggregate([
+      { $match: { createdAt: { $gte: last7Days } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    Session.aggregate([
+      { $match: { lastActive: { $gte: new Date(now - 24 * 60 * 60 * 1000) } } },
+      {
+        $group: {
+          _id: { $hour: "$lastActive" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+  ]);
+
+  const codesChart = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split("T")[0];
+    const found = weeklyCodeStats.find((c) => c._id === dateStr);
+    return {
+      date: d.toLocaleDateString("en-US", { weekday: "short" }),
+      value: found ? found.count : 0,
+    };
+  });
+
+  const sessionsChart = Array.from({ length: 24 }, (_, i) => {
+    const hour = (now.getHours() - (24 - i - 1) + 24) % 24;
+    const found = sessionsHistory.find((h) => h._id === hour);
+    return {
+      time: `${hour}:00`,
+      value: found ? found.count : 0,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      stats: {
+        totalCodes,
+        activeSessions,
+        totalUsers,
+        revenue,
+        serverStatus: "Online",
+        trends: { users: 0, sessions: 0, codes: 0, revenue: 0 }, // Placeholder for trends
+      },
+      recentActivity: activity,
+      liveSessions: recentSessions,
+      analytics: {
+        codesChart,
+        sessionsChart,
+        roleDistribution: [
+          { name: "Mobile", value: 60 },
+          { name: "TV", value: 30 },
+          { name: "Web", value: 10 },
+        ], // Simplified static or calculated if needed
+      },
+    },
+  });
+});
+
 exports.verifyMasterPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
   if (!password) {
@@ -119,26 +229,6 @@ exports.revealCode = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getDashboardStats = catchAsync(async (req, res, next) => {
-  const stats = await AdminService.getDashboardStats();
-  res.status(200).json({ success: true, data: stats });
-});
-
-exports.getWeeklyCodeStats = catchAsync(async (req, res, next) => {
-  const stats = await AdminService.getWeeklyStats();
-  res.status(200).json({ success: true, data: stats });
-});
-
-exports.getAnalyticsData = catchAsync(async (req, res, next) => {
-  const data = await AdminService.getAnalyticsData();
-  res.status(200).json({ success: true, data });
-});
-
-exports.getRecentActivity = catchAsync(async (req, res, next) => {
-  const activity = await AdminService.getRecentActivity();
-  res.status(200).json({ success: true, data: activity });
-});
-
 exports.getAllCodes = catchAsync(async (req, res, next) => {
   const logger = require("../utils/logger");
 
@@ -166,15 +256,6 @@ exports.getAllCodes = catchAsync(async (req, res, next) => {
 exports.deleteCode = catchAsync(async (req, res, next) => {
   await AdminService.deleteCode(req.user._id, req.params.id);
   res.status(200).json({ success: true, message: "Code deleted successfully" });
-});
-
-exports.getLiveSessions = catchAsync(async (req, res, next) => {
-  const sessions = await Session.find().populate("userId");
-  res.status(200).json({
-    success: true,
-    message: "Active sessions retrieved",
-    data: { count: sessions.length, sessions },
-  });
 });
 
 exports.getSystemStatus = catchAsync(async (req, res, next) => {

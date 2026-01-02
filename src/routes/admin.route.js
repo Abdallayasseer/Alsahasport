@@ -60,26 +60,18 @@ router.delete("/codes/:id", restrictTo("MASTER_ADMIN"), deleteCode);
 router.get("/sessions/live", restrictTo("MASTER_ADMIN"), getLiveSessions);
 
 // Dashboard Stats
+// Consolidated Dashboard Endpoint
 router.get(
   "/stats",
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  getDashboardStats
-);
-router.get(
-  "/stats/weekly",
-  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  getWeeklyCodeStats
-);
-router.get(
-  "/activity",
-  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  getRecentActivity
+  require("../controllers/admin.Controller").getDashboardData
 );
 
+// (Optional) Keep specific analytics if needed, but redundant with above
 router.get(
   "/analytics",
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  require("../controllers/admin.Controller").getAnalyticsData
+  require("../controllers/admin.Controller").getAnalyticsData // You might want to remove this too if completely cleaning up, but keeping for safety
 );
 
 // System Status
