@@ -38,7 +38,7 @@ exports.getDashboardData = catchAsync(async (req, res, next) => {
   ] = await Promise.all([
     ActivationCode.countDocuments(),
     Session.countDocuments(),
-    ActivationCode.countDocuments({ status: { $ne: "unused" } }),
+    ActivationCode.countDocuments(), // Total Users = Total Codes Generated
     ActivationCode.find()
       .sort({ createdAt: -1 })
       .limit(5)
