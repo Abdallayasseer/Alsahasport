@@ -5,20 +5,16 @@ const {
   createCode,
   getAllCodes,
   deleteCode,
-  getLiveSessions,
   loginAdmin,
   displayCode,
   revealCode,
-  getDashboardStats,
-  getWeeklyCodeStats,
-  getRecentActivity,
+  getDashboardData,
   getSystemStatus,
 } = require("../controllers/admin.Controller");
 
 const {
   validateLogin,
   validateCreateCode,
-
   validateRevealCode,
 } = require("../validators/admin.validator");
 const { authLimiter } = require("../middlewares/rateLimiters");
@@ -56,27 +52,15 @@ router.post(
 router.get("/codes", restrictTo("MASTER_ADMIN", "DAILY_ADMIN"), getAllCodes);
 router.delete("/codes/:id", restrictTo("MASTER_ADMIN"), deleteCode);
 
-// Monitoring
-router.get("/sessions/live", restrictTo("MASTER_ADMIN"), getLiveSessions);
-
 // Dashboard Stats
 // Consolidated Dashboard Endpoint
 router.get(
   "/stats",
   restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  require("../controllers/admin.Controller").getDashboardData
-);
-
-// (Optional) Keep specific analytics if needed, but redundant with above
-router.get(
-  "/analytics",
-  restrictTo("MASTER_ADMIN", "DAILY_ADMIN"),
-  require("../controllers/admin.Controller").getAnalyticsData // You might want to remove this too if completely cleaning up, but keeping for safety
+  getDashboardData
 );
 
 // System Status
 router.get("/system/status", getSystemStatus);
-
-// Content Management
 
 module.exports = router;
