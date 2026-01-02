@@ -60,6 +60,26 @@ const sanitize = (data, allowCode) => {
       "type",
       "dns",
       // 'username' is already allowed above
+
+      // Dashboard
+      "stats",
+      "totalUsers",
+      "activeSessions",
+      "totalCodes",
+      "revenue",
+      "trends",
+      "serverStatus",
+      "recentActivity",
+      "liveSessions",
+      "analytics",
+      "codesChart",
+      "sessionsChart",
+      "roleDistribution",
+      "date",
+      "value",
+      "title",
+      "time",
+      "details",
     ];
 
     if (process.env.NODE_ENV !== "production") {
@@ -90,7 +110,21 @@ const sanitize = (data, allowCode) => {
       // If "user" is NOT in whitelist, I drop the whole user object? That's bad.
       // So I need to add "user", "items", "sessions" etc to whitelist.
 
-      const containers = ["user", "sessions", "items", "provider", "channel"];
+      const containers = [
+        "user",
+        "sessions",
+        "items",
+        "provider",
+        "channel",
+        "stats",
+        "analytics",
+        "recentActivity",
+        "liveSessions",
+        "trends",
+        "codesChart",
+        "sessionsChart",
+        "roleDistribution",
+      ];
 
       if (allowedFields.includes(key) || containers.includes(key)) {
         clean[key] = sanitize(data[key], allowCode);
