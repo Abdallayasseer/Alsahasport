@@ -47,8 +47,8 @@ exports.getDashboardData = catchAsync(async (req, res, next) => {
     Session.find().sort({ lastActive: -1 }).limit(5).populate("userId").lean(),
   ]);
 
-  // 2. Revenue Calculation (Strict Rule: totalUsers * 3.82)
-  const revenue = totalUsers * 3.82;
+  // 2. Revenue Calculation (Strict Rule: totalUsers * 3)
+  const revenue = totalUsers * 3;
 
   // 3. Format Recent Activity (Standardized)
   const activity = recentActivityCodes.map((code) => ({
