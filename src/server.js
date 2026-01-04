@@ -9,8 +9,12 @@ process.on("uncaughtException", (err) => {
 
 dotenv.config();
 const app = require("./app");
+const { initCronJobs } = require("./services/cronService");
 
 const PORT = process.env.PORT || 5000;
+
+// Initialize Cron Jobs
+initCronJobs();
 
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
