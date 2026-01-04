@@ -29,11 +29,20 @@ class AdminService {
   }
 
   generateRandomCode() {
-    const suffix = crypto
-      .randomBytes(3)
-      .toString("hex")
-      .toUpperCase()
-      .slice(0, 5);
+    // Custom Alphanumeric Generation (A-Z, 0-9) for 12 chars
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const suffixLength = 12;
+    let suffix = "";
+
+    // Secure Random Bytes
+    const randomBytes = crypto.randomBytes(suffixLength);
+
+    for (let i = 0; i < suffixLength; i++) {
+      // Map byte to character set
+      const index = randomBytes[i] % chars.length;
+      suffix += chars[index];
+    }
+
     return `ALSAHA-${suffix}`;
   }
 
