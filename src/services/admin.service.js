@@ -29,7 +29,12 @@ class AdminService {
   }
 
   generateRandomCode() {
-    return crypto.randomBytes(6).toString("hex").toUpperCase();
+    const suffix = crypto
+      .randomBytes(3)
+      .toString("hex")
+      .toUpperCase()
+      .slice(0, 5);
+    return `ALSAHA-${suffix}`;
   }
 
   async createCodeInDB(adminId, { durationDays, maxDevices }, codeRaw) {

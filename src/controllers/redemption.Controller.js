@@ -13,7 +13,17 @@ exports.redeemCodeAtomic = catchAsync(async (req, res, next) => {
     return next(new AppError("Code and DeviceId required", 400));
   }
 
-  const hashedCode = hashToken(code.trim().toUpperCase());
+  // 1. Format Validation
+  const codeTrimmed = code.trim().toUpperCase();
+  const formatRegex = /^ALSAHA-[A-Z0-9]+$/;
+
+  if (!formatRegex.test(codeTrimmed)) {
+    return next(
+      new AppError("Invalid Format. Code must start with 'ALSAHA-'", 400)
+    );
+  }
+
+  const hashedCode = hashToken(codeTrimmed);
 
   // START TRANSACTION
   const session = await mongoose.startSession();
