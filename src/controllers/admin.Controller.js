@@ -12,77 +12,65 @@ const { analyzeIpConfidence } = require("../utils/ipDetection");
 
 const mongoose = require("mongoose"); // Explicit import
 
-exports.loginAdmin = catchAsync(async (req, res, next) => {
-  console.log(
-    "----------------------------------------------------------------"
-  );
-  console.log("[Login Flow] 1. Request Received");
-  console.log(`[Login Flow] Timestamp: ${new Date().toISOString()}`);
-
-  // 1. Critical Health Check: Database
-  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-  if (mongoose.connection.readyState !== 1) {
-    console.error(
-      "[Login Critical] MongoDB Not Connected! State:",
-      mongoose.connection.readyState
-    );
-    // Attempt to force a clear error ensuring we don't hang
-    return next(
-      new AppError(
-        "Server Database is not connected (State: " +
-          mongoose.connection.readyState +
-          ")",
-        500
-      )
-    );
-  }
-  console.log("[Login Flow] 2. DB Connection Active");
-
-  // 2. Critical Health Check: Env Vars
-  if (!process.env.JWT_SECRET) {
-    console.error(
-      "[Login Critical] JWT_SECRET is missing from environment variables!"
-    );
-    return next(
-      new AppError("Server Misconfiguration: Missing JWT_SECRET", 500)
-    );
-  }
-  console.log("[Login Flow] 3. Env Vars Validated");
+exports.loginAdmin = async (req, res, next) => {
+  // NOTE: catchAsync removed for raw debugging control
+  console.log("Step 1: Login Request Received");
 
   try {
-    const { username, password, clientPublicIp } = req.body;
+    // 1. Environment Check
+    if (!process.env.JWT_SECRET) {
+      console.error("Step 1.1: CRITICAL - JWT_SECRET is missing");
+      throw new Error("JWT_SECRET is not defined in environment variables");
+    }
+    console.log("Step 2: Environment Variables OK");
 
-    // Sanity check inputs
+    // 2. Body Check
+    const { username, password, clientPublicIp } = req.body;
+    console.log("Step 3: Payload received", {
+      username,
+      hasPassword: !!password,
+    });
+
     if (!username || !password) {
-      console.warn("[Login Flow] Missing username or password in body");
-      return next(new AppError("Please provide username and password", 400));
+      console.warn("Step 3.1: Missing credentials");
+      return res
+        .status(400)
+        .json({
+          status: "fail",
+          message: "Please provide username and password",
+        });
     }
 
-    console.log(`[Login Flow] 4. Authenticating user: ${username}`);
+    // 3. Database Check
+    if (mongoose.connection.readyState !== 1) {
+      console.error(
+        "Step 3.2: MongoDB not ready. State:",
+        mongoose.connection.readyState
+      );
+      throw new Error("Database not connected");
+    }
 
-    // Explicitly await the service
+    // 4. Find Admin
+    console.log("Step 4: Calling AdminService.authenticate...");
     const admin = await AdminService.authenticate(username, password);
+    console.log("Step 5: Admin authenticated successfully", { id: admin?._id });
 
     if (!admin) {
-      // This case should be handled by the service throwing an error, but just in case:
-      console.error(
-        "[Login Flow] Authenticate returned null/undefined without error"
-      );
-      return next(new AppError("Authentication failed silently", 401));
+      // Should have thrown in service, but double check
+      throw new Error("Authentication returned null");
     }
 
-    console.log(
-      "[Login Flow] 5. Authentication Successful. Admin ID:",
-      admin._id
-    );
-
+    // 5. Build Session Data
+    console.log("Step 6: Analyzing IP...");
     const proxyIp = getRealIp(req);
     const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
-
-    // Fallback for role if missing
     const sessionRole = admin.role || "admin";
 
-    console.log("[Login Flow] 6. Creating Session & Sending Response...");
+    // 6. Create Session & Send
+    console.log("Step 7: Creating session and sending response...");
+
+    // Inline the session logic if createSessionAndSend is suspect,
+    // but for now we wrap it.
     await createSessionAndSend(
       admin,
       "admin-browser",
@@ -91,33 +79,17 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
       res,
       sessionRole
     );
-    console.log("[Login Flow] 7. Response Sent Successfully");
-    console.log(
-      "----------------------------------------------------------------"
-    );
+    console.log("Step 8: Login Flow Complete - Response Sent");
   } catch (error) {
-    // 3. Robust Error Catching
-    console.error("=========================================");
-    console.error(" [LOGIN CRASH DETECTED] ");
-    console.error("Error Name:", error.name);
-    console.error("Error Message:", error.message);
-    if (error.stack) {
-      console.error("Stack Trace:");
-      console.error(error.stack);
-    }
-    console.error("=========================================");
-
-    // If it's a known operational error, just pass it
-    if (error.isOperational || error.statusCode) {
-      return next(error);
-    }
-
-    // If it's an unexpected crash (reference error, syntax error, etc), ensure we return a JSON response
-    return next(
-      new AppError(`Internal Crash during Login: ${error.message}`, 500)
-    );
+    console.error("LOGIN CRASH:", error);
+    // Graceful Failure - Bypass Global Error Handler for clarity
+    return res.status(500).json({
+      status: "error",
+      message: error.message || "Internal Login Error",
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
-});
+};
 
 exports.getDashboardData = catchAsync(async (req, res, next) => {
   // 1. Run all counts in parallel for performance
