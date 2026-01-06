@@ -11,13 +11,16 @@ const validateLoginZod = (req, res, next) => {
   const result = loginSchema.safeParse(req.body);
 
   if (!result.success) {
-    // The result.error object from safeParse is guaranteed to be a ZodError
-    // when result.success is false, and ZodError always has an 'errors' array.
-    // However, to align with the spirit of the instruction for defensive coding,
-    // we can add a check, though it's technically not strictly necessary here
-    // for Zod's safeParse output.
+    // Debugging: Log the full error object to understand why errors might be missing
+    console.log(
+      "LOGIN VALIDATION FAILED:",
+      JSON.stringify(result.error, null, 2)
+    );
+
     const errors = result.error?.errors || [];
-    const messages = errors.map((e) => e.message).join(", ") || "Validation failed";
+    const messages =
+      errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ") ||
+      "Validation failed";
     return next(new AppError(messages, 400));
   }
 
