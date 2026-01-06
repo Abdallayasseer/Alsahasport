@@ -57,10 +57,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
-// Setup Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
-const setupSecurity = require("./middlewares/security");
-setupSecurity(app);
-
 // Compression
 app.use(compression());
 
@@ -75,9 +71,16 @@ app.use(
   })
 );
 
+// 2. Body Parser Parser (MUST be before Security/Sanitization)
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser()); // Parsing cookies for Refresh Tokens
+
+// 3. Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
+// IMPORTANT: This must run AFTER body parsers so req.body/query are available to sanitize
+const setupSecurity = require("./middlewares/security");
+setupSecurity(app);
 
 // Output Sanitization (Security)
 app.use(require("./middlewares/responseSanitizer"));
