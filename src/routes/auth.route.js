@@ -11,7 +11,11 @@ const {
 
 const { protect } = require("../middlewares/auth");
 const { validateActivate } = require("../validators/auth.validator");
-const { authLimiter, loginLimiter } = require("../middlewares/rateLimiters");
+const {
+  authLimiter,
+  loginLimiter,
+  refreshLimiter,
+} = require("../middlewares/rateLimiters");
 
 router.post(
   "/activate",
@@ -20,7 +24,7 @@ router.post(
   redeemCodeAtomic,
   completeLogin
 );
-router.post("/refresh", refreshToken);
+router.post("/refresh", refreshLimiter, refreshToken);
 router.post("/validate", protect, validateSession);
 router.post("/logout", protect, logout);
 

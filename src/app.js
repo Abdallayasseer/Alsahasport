@@ -4,11 +4,22 @@ const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const compression = require("compression");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
+const xss = require("xss-clean");
+const hpp = require("hpp");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.route");
 const adminRoutes = require("./routes/admin.route");
 const AppError = require("./utils/AppError");
+
+// Production Optimization: Remove console.logs
+if (process.env.NODE_ENV === "production") {
+  console.log = function () {};
+  console.warn = function () {};
+  console.error = function () {};
+}
 
 const app = express();
 
@@ -17,7 +28,10 @@ connectDB();
 
 app.set("trust proxy", 1);
 
-// 2. CORS 
+// 2. Security Middlewares (The Fortress)
+app.use(helmet()); // Set secure HTTP headers
+
+// 3. CORS
 const whitelist = process.env.CORS_WHITELIST
   ? process.env.CORS_WHITELIST.split(",").map((url) => url.trim())
   : [process.env.FRONTEND_URL, "https://alsahasport-admin.vercel.app"];
@@ -47,26 +61,36 @@ app.use(
 );
 app.options(/(.*)/, cors());
 
-// 3. Essential Parsing 
+// 4. Essential Parsing & Sanitization
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 app.use(compression());
-app.use(morgan("dev"));
 
-// const setupSecurity = require("./middlewares/security");
-// setupSecurity(app);
+// Development logging
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
-// app.use(require("./middlewares/responseSanitizer"));
+// Data Sanitization against NoSQL query injection
+app.use(mongoSanitize());
 
-// 4. Routes
+// Data Sanitization against XSS
+app.use(xss());
+
+// Prevent Parameter Pollution
+app.use(hpp());
+
+// 5. Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-// 5. Emergency Error Handler 
+// 6. Emergency Error Handler
 app.use((err, req, res, next) => {
-  console.error("CRITICAL ERROR ");
-  console.error(err.stack);
+  if (process.env.NODE_ENV === "development") {
+    console.error("CRITICAL ERROR ");
+    console.error(err.stack);
+  }
 
   res.status(err.statusCode || 500).json({
     status: "error",

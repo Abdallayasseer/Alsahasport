@@ -14,13 +14,13 @@ const {
 } = require("../controllers/admin.Controller");
 
 const {
-  validateLogin,
   validateCreateCode,
   validateRevealCode,
 } = require("../validators/admin.validator");
+const { validateLoginZod } = require("../validators/login.schema");
 const { loginLimiter } = require("../middlewares/rateLimiters");
 
-router.post("/login", loginLimiter, validateLogin, loginAdmin);
+router.post("/login", loginLimiter, validateLoginZod, loginAdmin);
 
 // Verification Endpoint (Protected)
 const { verifyMasterPassword } = require("../controllers/admin.Controller");

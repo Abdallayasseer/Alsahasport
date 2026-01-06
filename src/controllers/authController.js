@@ -103,10 +103,14 @@ exports.completeLogin = catchAsync(async (req, res, next) => {
 });
 
 exports.refreshToken = catchAsync(async (req, res, next) => {
-  if (!req.body || !req.body.refreshToken) {
+  // Defensive check: Ensure req.body exists
+  if (!req.body) req.body = {};
+
+  const token = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!token) {
     return next(new AppError("No refresh token provided", 400));
   }
-  const token = req.cookies.refreshToken || req.body.refreshToken;
 
   // Zod Validate
   try {

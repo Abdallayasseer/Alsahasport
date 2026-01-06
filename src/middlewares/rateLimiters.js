@@ -18,3 +18,9 @@ exports.loginLimiter = rateLimit({
   message:
     "Too many login attempts from this IP, please try again after 15 minutes",
 });
+
+exports.refreshLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // Strict limit on refresh tokens to prevent abuse
+  message: "Too many refresh attempts, please try again later",
+});
