@@ -33,9 +33,16 @@ const whitelist = process.env.CORS_WHITELIST
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Explicitly allow Vercel Frontend and Railway requests
+    const allowedOrigins = [
+      "https://alsahasport-admin.vercel.app",
+      "https://alsahasport-production.up.railway.app",
+    ];
+
     if (
       !origin ||
       whitelist.indexOf(origin) !== -1 ||
+      allowedOrigins.includes(origin) ||
       process.env.NODE_ENV === "development"
     ) {
       callback(null, true);
@@ -44,7 +51,7 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
 app.use(cors(corsOptions));
