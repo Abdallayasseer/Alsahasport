@@ -51,6 +51,27 @@ const protect = catchAsync(async (req, res, next) => {
     return next(new AppError("Session has expired.", 401));
   }
 
+  // **Security Hardening**: IP Session Binding
+  // If the IP changes significantly, we destroy the session to prevent hijacking.
+  const { getRealIp } = require("../utils/ipUtils");
+  const currentIp = getRealIp(req);
+
+  // We compare with the IP stored during session creation.
+  // Note: mobile networks might change IPs, but the user explicitly requested this strict check.
+  if (session.clientPublicIp && session.clientPublicIp !== currentIp) {
+    logger.warn(
+      `[Auth] Session Hijacking blocked! IP changed from ${session.clientPublicIp} to ${currentIp} for user ${decoded.userId}`
+    );
+    // Optionally revoke the session immediately
+    // await Session.findByIdAndUpdate(session._id, { isRevoked: true });
+    return next(
+      new AppError(
+        "Session invalid: IP address changed. Please log in again.",
+        401
+      )
+    );
+  }
+
   // 4) Check if User still exists
   let currentUser;
   if (

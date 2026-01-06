@@ -26,8 +26,9 @@ app.set("trust proxy", 1);
 
 // 1. Global Middleware
 
-// Set security HTTP headers
-app.use(helmet());
+// Setup Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
+const setupSecurity = require("./middlewares/security");
+setupSecurity(app);
 
 // Implement CORS (Strict Whitelist)
 const whitelist = process.env.CORS_WHITELIST
@@ -70,33 +71,6 @@ app.use(
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser()); // Parsing cookies for Refresh Tokens
-
-// Data Sanitization against NoSQL query injection
-app.use((req, res, next) => {
-  if (req.body) req.body = mongoSanitize.sanitize(req.body);
-  if (req.params) req.params = mongoSanitize.sanitize(req.params);
-  if (req.query) {
-    try {
-      req.query = mongoSanitize.sanitize(req.query);
-    } catch (err) {
-      logger.warn(`Sanitization Warning: ${err.message}`);
-    }
-  }
-  next();
-});
-
-// Prevent Parameter Pollution
-app.use((req, res, next) => {
-  try {
-    hpp()(req, res, next);
-  } catch (err) {
-    logger.warn(`HPP Warning: ${err.message}`);
-    next();
-  }
-});
-
-// Global Rate Limiting (Applied to /api)
-app.use("/api", apiLimiter);
 
 // Output Sanitization (Security)
 app.use(require("./middlewares/responseSanitizer"));

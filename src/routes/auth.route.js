@@ -11,11 +11,11 @@ const {
 
 const { protect } = require("../middlewares/auth");
 const { validateActivate } = require("../validators/auth.validator");
-const { authLimiter } = require("../middlewares/rateLimiters");
+const { authLimiter, loginLimiter } = require("../middlewares/rateLimiters");
 
 router.post(
   "/activate",
-  authLimiter,
+  loginLimiter,
   validateActivate,
   redeemCodeAtomic,
   completeLogin

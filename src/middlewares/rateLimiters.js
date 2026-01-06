@@ -11,3 +11,10 @@ exports.apiLimiter = rateLimit({
   max: 1000, // Limit each IP to 1000 requests per 15 mins
   message: "Too many requests from this IP, please try again later",
 });
+
+exports.loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per 15 minutes window
+  message:
+    "Too many login attempts from this IP, please try again after 15 minutes",
+});
