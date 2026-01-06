@@ -12,10 +12,14 @@ const os = require("os");
 const ESTIMATED_CODE_PRICE = 10; // TODO: Move to DB/Config later
 
 class AdminService {
-  async authenticate(username, password) {
-    const admin = await Admin.findOne({ username }).select("+password");
+  async authenticate(identifier, password) {
+    // Hybrid Search: Username OR Email
+    const admin = await Admin.findOne({
+      $or: [{ username: identifier }, { email: identifier }],
+    }).select("+password");
+
     if (!admin || !(await bcrypt.compare(password, admin.password))) {
-      throw new AppError("Invalid username or password", 401);
+      throw new AppError("Invalid credentials", 401);
     }
     return admin;
   }

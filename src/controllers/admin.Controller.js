@@ -25,17 +25,20 @@ exports.loginAdmin = async (req, res, next) => {
     console.log("Step 2: Environment Variables OK");
 
     // 2. Body Check
-    const { username, password, clientPublicIp } = req.body;
+    const { identifier, username, password, clientPublicIp } = req.body;
+    // Support both new 'identifier' and legacy 'username' fields
+    const loginId = identifier || username;
+
     console.log("Step 3: Payload received", {
-      username,
+      loginId,
       hasPassword: !!password,
     });
 
-    if (!username || !password) {
+    if (!loginId || !password) {
       console.warn("Step 3.1: Missing credentials");
       return res.status(400).json({
         status: "fail",
-        message: "Please provide username and password",
+        message: "Please provide username/email and password",
       });
     }
 
@@ -50,7 +53,7 @@ exports.loginAdmin = async (req, res, next) => {
 
     // 4. Find Admin
     console.log("Step 4: Calling AdminService.authenticate...");
-    const admin = await AdminService.authenticate(username, password);
+    const admin = await AdminService.authenticate(loginId, password);
     console.log("Step 5: Admin authenticated successfully", { id: admin?._id });
 
     if (!admin) {

@@ -2,7 +2,7 @@ const { z } = require("zod");
 const AppError = require("../utils/AppError");
 
 const loginSchema = z.object({
-  username: z.string().email("Please provide a valid email address"),
+  identifier: z.string().min(1, "Username or Email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   clientPublicIp: z.string().optional(),
 });
