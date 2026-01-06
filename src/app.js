@@ -62,7 +62,7 @@ app.use(
 );
 
 // Enable Pre-Flight for all routes
-app.options("*", cors());
+app.options("/(.*)/", cors());
 
 // ==========================================
 // 2. Parsing Middlewares
@@ -86,7 +86,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
 // 404 & Error Handler
-app.all("*", (req, res, next) => {
+app.all("/(.*)/", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
