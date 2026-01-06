@@ -5,8 +5,6 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const compression = require("compression");
-const mongoSanitize = require("express-mongo-sanitize");
-const hpp = require("hpp");
 const { apiLimiter } = require("./middlewares/rateLimiters");
 
 const connectDB = require("./config/db");
@@ -21,24 +19,27 @@ connectDB();
 
 const app = express();
 
-// Trust Proxy for Railway/Vercel
 app.set("trust proxy", 1);
 
-// 1. Global Middleware
+// ==================================================
+// Parsing Middlewares 
+// ==================================================
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(cookieParser());
 
-// Implement CORS (Strict Whitelist)
+// 3. إعدادات الـ CORS
 const whitelist = process.env.CORS_WHITELIST
   ? process.env.CORS_WHITELIST.split(",")
   : [process.env.FRONTEND_URL, "https://alsahasport-admin.vercel.app"];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Explicitly allow Vercel Frontend and Railway requests
     const allowedOrigins = [
       "https://alsahasport-admin.vercel.app",
       "https://alsahasport-production.up.railway.app",
+      "http://localhost:5173", 
     ];
-
     if (
       !origin ||
       whitelist.indexOf(origin) !== -1 ||
@@ -54,19 +55,12 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
-// 1. Parsing Middleware (TOP PRIORITY for mongo-sanitize)
-// Must parse body BEFORE security middleware attempts to sanitize it
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-app.use(cookieParser());
-
-// 2. Global Middleware (CORS, Compression, Logging)
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
 app.use(compression());
 
-// Logging Middleware
+// Logging
 const morganFormat =
   process.env.NODE_ENV === "development" ? "dev" : "combined";
 app.use(
@@ -77,12 +71,13 @@ app.use(
   })
 );
 
-// 3. Security (Helmet, XSS, MongoSanitize, HPP, Rate Limit)
-// IMPORTANT: This must run AFTER body parsers
+// ==================================================
+// ( express.json)
+// ==================================================
 const setupSecurity = require("./middlewares/security");
 setupSecurity(app);
 
-// Output Sanitization (Security)
+// Output Sanitization
 app.use(require("./middlewares/responseSanitizer"));
 
 // Routes
