@@ -14,7 +14,6 @@ const validateLoginZod = (req, res, next) => {
     const messages = result.error.errors.map((e) => e.message).join(", ");
     return next(new AppError(messages, 400));
   }
-
   req.body = result.data;
 
   next();
