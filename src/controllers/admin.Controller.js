@@ -1,5 +1,6 @@
 const AdminService = require("../services/admin.service");
 const ActivationCode = require("../models/ActivationCode.model");
+const Admin = require("../models/Admin.model");
 // Channels and Providers removed
 const Session = require("../models/Session.model");
 const catchAsync = require("../utils/catchAsync");
@@ -104,6 +105,8 @@ exports.getDashboardData = catchAsync(async (req, res, next) => {
     totalUsers, // Codes where isActivated=true (status != 'unused')
     recentActivityCodes,
     recentSessions,
+    activeUsersCount, // Sessions with role="user"
+    totalAdminsCount, // Total Admin documents
   ] = await Promise.all([
     ActivationCode.countDocuments(),
     Session.countDocuments(),
@@ -114,6 +117,8 @@ exports.getDashboardData = catchAsync(async (req, res, next) => {
       .populate("createdBy", "username")
       .lean(),
     Session.find().sort({ lastActive: -1 }).limit(5).populate("userId").lean(),
+    Session.countDocuments({ role: "user" }),
+    Admin.countDocuments(),
   ]);
 
   // 2. Revenue Calculation (Strict Rule: totalUsers * 3)
@@ -188,6 +193,8 @@ exports.getDashboardData = catchAsync(async (req, res, next) => {
         activeSessions,
         totalUsers,
         revenue,
+        activeUsers: activeUsersCount,
+        totalAdmins: totalAdminsCount,
         serverStatus: "Online",
         trends: { users: 0, sessions: 0, codes: 0, revenue: 0 }, // Placeholder for trends
       },
