@@ -73,13 +73,13 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // Data Sanitization against NoSQL query injection
- app.use(mongoSanitize()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
+//  app.use(mongoSanitize()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
 
 // Data Sanitization against XSS
-// app.use(xss()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
+app.use(xss()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
 
 // Prevent Parameter Pollution
-// app.use(hpp()); // Temporarily disabled to ensure stability
+app.use(hpp()); // Temporarily disabled to ensure stability
 
 // 5. Routes
 app.use("/api/auth", authRoutes);
