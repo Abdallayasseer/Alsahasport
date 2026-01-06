@@ -17,7 +17,6 @@ const sessionSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["user", "admin", "MASTER_ADMIN", "DAILY_ADMIN"],
       default: "user",
     },
     refreshTokenHash: {

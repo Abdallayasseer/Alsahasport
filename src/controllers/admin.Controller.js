@@ -18,13 +18,23 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
     const proxyIp = getRealIp(req);
     const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
 
+    // Debug Logging
+    console.log("[Login Debug] Admin found:", {
+      id: admin._id,
+      role: admin.role,
+      username: admin.username,
+    });
+
+    // Fallback for role if missing
+    const sessionRole = admin.role || "admin";
+
     await createSessionAndSend(
       admin,
       "admin-browser",
       ipData,
       req.headers["user-agent"],
       res,
-      admin.role
+      sessionRole
     );
   } catch (error) {
     console.error("[Login Error] Admin Login Failed:", error);
