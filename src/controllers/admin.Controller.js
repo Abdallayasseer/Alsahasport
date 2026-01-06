@@ -13,37 +13,76 @@ const { analyzeIpConfidence } = require("../utils/ipDetection");
 const mongoose = require("mongoose"); // Explicit import
 
 exports.loginAdmin = catchAsync(async (req, res, next) => {
-  // 1. Robust Health Check (Before anything else)
+  console.log(
+    "----------------------------------------------------------------"
+  );
+  console.log("[Login Flow] 1. Request Received");
+  console.log(`[Login Flow] Timestamp: ${new Date().toISOString()}`);
+
+  // 1. Critical Health Check: Database
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   if (mongoose.connection.readyState !== 1) {
     console.error(
       "[Login Critical] MongoDB Not Connected! State:",
       mongoose.connection.readyState
     );
-    return next(new AppError("Server Database Error", 500));
+    // Attempt to force a clear error ensuring we don't hang
+    return next(
+      new AppError(
+        "Server Database is not connected (State: " +
+          mongoose.connection.readyState +
+          ")",
+        500
+      )
+    );
   }
+  console.log("[Login Flow] 2. DB Connection Active");
 
+  // 2. Critical Health Check: Env Vars
   if (!process.env.JWT_SECRET) {
-    console.error("[Login Critical] JWT_SECRET is missing!");
-    return next(new AppError("Server Configuration Error", 500));
+    console.error(
+      "[Login Critical] JWT_SECRET is missing from environment variables!"
+    );
+    return next(
+      new AppError("Server Misconfiguration: Missing JWT_SECRET", 500)
+    );
   }
+  console.log("[Login Flow] 3. Env Vars Validated");
 
   try {
     const { username, password, clientPublicIp } = req.body;
+
+    // Sanity check inputs
+    if (!username || !password) {
+      console.warn("[Login Flow] Missing username or password in body");
+      return next(new AppError("Please provide username and password", 400));
+    }
+
+    console.log(`[Login Flow] 4. Authenticating user: ${username}`);
+
+    // Explicitly await the service
     const admin = await AdminService.authenticate(username, password);
+
+    if (!admin) {
+      // This case should be handled by the service throwing an error, but just in case:
+      console.error(
+        "[Login Flow] Authenticate returned null/undefined without error"
+      );
+      return next(new AppError("Authentication failed silently", 401));
+    }
+
+    console.log(
+      "[Login Flow] 5. Authentication Successful. Admin ID:",
+      admin._id
+    );
 
     const proxyIp = getRealIp(req);
     const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
 
-    // Debug Logging
-    console.log("[Login Debug] Admin found:", {
-      id: admin._id,
-      role: admin.role,
-      username: admin.username,
-    });
-
     // Fallback for role if missing
     const sessionRole = admin.role || "admin";
 
+    console.log("[Login Flow] 6. Creating Session & Sending Response...");
     await createSessionAndSend(
       admin,
       "admin-browser",
@@ -52,9 +91,31 @@ exports.loginAdmin = catchAsync(async (req, res, next) => {
       res,
       sessionRole
     );
+    console.log("[Login Flow] 7. Response Sent Successfully");
+    console.log(
+      "----------------------------------------------------------------"
+    );
   } catch (error) {
-    console.error("[Login Error] Admin Login Failed:", error);
-    return next(error);
+    // 3. Robust Error Catching
+    console.error("=========================================");
+    console.error(" [LOGIN CRASH DETECTED] ");
+    console.error("Error Name:", error.name);
+    console.error("Error Message:", error.message);
+    if (error.stack) {
+      console.error("Stack Trace:");
+      console.error(error.stack);
+    }
+    console.error("=========================================");
+
+    // If it's a known operational error, just pass it
+    if (error.isOperational || error.statusCode) {
+      return next(error);
+    }
+
+    // If it's an unexpected crash (reference error, syntax error, etc), ensure we return a JSON response
+    return next(
+      new AppError(`Internal Crash during Login: ${error.message}`, 500)
+    );
   }
 });
 
