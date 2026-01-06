@@ -10,7 +10,23 @@ const { createSessionAndSend } = require("./authController");
 const { getRealIp } = require("../utils/ipUtils");
 const { analyzeIpConfidence } = require("../utils/ipDetection");
 
+const mongoose = require("mongoose"); // Explicit import
+
 exports.loginAdmin = catchAsync(async (req, res, next) => {
+  // 1. Robust Health Check (Before anything else)
+  if (mongoose.connection.readyState !== 1) {
+    console.error(
+      "[Login Critical] MongoDB Not Connected! State:",
+      mongoose.connection.readyState
+    );
+    return next(new AppError("Server Database Error", 500));
+  }
+
+  if (!process.env.JWT_SECRET) {
+    console.error("[Login Critical] JWT_SECRET is missing!");
+    return next(new AppError("Server Configuration Error", 500));
+  }
+
   try {
     const { username, password, clientPublicIp } = req.body;
     const admin = await AdminService.authenticate(username, password);
