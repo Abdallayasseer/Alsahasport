@@ -5,8 +5,16 @@ const sanitize = (data, allowCode) => {
   if (Array.isArray(data)) return data.map((item) => sanitize(item, allowCode));
   if (typeof data !== "object") return data; // Strings, numbers, booleans
 
+  // Handle Mongoose ObjectId (Crucial Fix)
+  if (data.constructor && data.constructor.name === "ObjectId") {
+    return data.toString();
+  }
+  if (data._bsontype === "ObjectID") {
+    // For some mongodb driver versions
+    return data.toString();
+  }
+
   // 2. Handle Mongoose Documents & objects with toJSON/toObject
-  // This prevents circular reference issues and gets the clean data object
   let plainData = data;
   if (typeof data.toObject === "function") {
     plainData = data.toObject();

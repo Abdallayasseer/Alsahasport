@@ -33,12 +33,10 @@ exports.loginAdmin = async (req, res, next) => {
 
     if (!username || !password) {
       console.warn("Step 3.1: Missing credentials");
-      return res
-        .status(400)
-        .json({
-          status: "fail",
-          message: "Please provide username and password",
-        });
+      return res.status(400).json({
+        status: "fail",
+        message: "Please provide username and password",
+      });
     }
 
     // 3. Database Check
@@ -81,11 +79,15 @@ exports.loginAdmin = async (req, res, next) => {
     );
     console.log("Step 8: Login Flow Complete - Response Sent");
   } catch (error) {
-    console.error("LOGIN CRASH:", error);
-    // Graceful Failure - Bypass Global Error Handler for clarity
-    return res.status(500).json({
-      status: "error",
-      message: error.message || "Internal Login Error",
+    console.error("LOGIN FAIL:", error.message);
+
+    // Proper Error Propagation
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Internal Login Error";
+
+    return res.status(statusCode).json({
+      status: statusCode >= 500 ? "error" : "fail",
+      message: message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
