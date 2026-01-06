@@ -15,11 +15,12 @@ const adminRoutes = require("./routes/admin.route");
 const AppError = require("./utils/AppError");
 
 // Production Optimization: Remove console.logs
-if (process.env.NODE_ENV === "production") {
-  console.log = function () {};
-  console.warn = function () {};
-  console.error = function () {};
-}
+// Production Optimization: Remove console.logs
+// if (process.env.NODE_ENV === "production") {
+//   console.log = function () {};
+//   console.warn = function () {};
+//   console.error = function () {};
+// }
 
 const app = express();
 
