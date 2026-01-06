@@ -11,20 +11,25 @@ const { getRealIp } = require("../utils/ipUtils");
 const { analyzeIpConfidence } = require("../utils/ipDetection");
 
 exports.loginAdmin = catchAsync(async (req, res, next) => {
-  const { username, password, clientPublicIp } = req.body;
-  const admin = await AdminService.authenticate(username, password);
+  try {
+    const { username, password, clientPublicIp } = req.body;
+    const admin = await AdminService.authenticate(username, password);
 
-  const proxyIp = getRealIp(req);
-  const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
+    const proxyIp = getRealIp(req);
+    const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
 
-  await createSessionAndSend(
-    admin,
-    "admin-browser",
-    ipData,
-    req.headers["user-agent"],
-    res,
-    admin.role
-  );
+    await createSessionAndSend(
+      admin,
+      "admin-browser",
+      ipData,
+      req.headers["user-agent"],
+      res,
+      admin.role
+    );
+  } catch (error) {
+    console.error("[Login Error] Admin Login Failed:", error);
+    return next(error);
+  }
 });
 
 exports.getDashboardData = catchAsync(async (req, res, next) => {
