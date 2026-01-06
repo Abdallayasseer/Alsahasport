@@ -54,13 +54,19 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
+// 1. Parsing Middleware (TOP PRIORITY for mongo-sanitize)
+// Must parse body BEFORE security middleware attempts to sanitize it
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(cookieParser());
+
+// 2. Global Middleware (CORS, Compression, Logging)
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
 
-// Compression
 app.use(compression());
 
-// Logging Middleware (Morgan + Winston)
+// Logging Middleware
 const morganFormat =
   process.env.NODE_ENV === "development" ? "dev" : "combined";
 app.use(
@@ -71,14 +77,8 @@ app.use(
   })
 );
 
-// 2. Body Parser Parser (MUST be before Security/Sanitization)
-// Body parser, reading data from body into req.body
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-app.use(cookieParser()); // Parsing cookies for Refresh Tokens
-
-// 3. Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
-// IMPORTANT: This must run AFTER body parsers so req.body/query are available to sanitize
+// 3. Security (Helmet, XSS, MongoSanitize, HPP, Rate Limit)
+// IMPORTANT: This must run AFTER body parsers
 const setupSecurity = require("./middlewares/security");
 setupSecurity(app);
 
