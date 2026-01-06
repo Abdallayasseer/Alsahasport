@@ -18,7 +18,11 @@ class AdminService {
       $or: [{ username: identifier }, { email: identifier }],
     }).select("+password");
 
-    if (!admin || !(await bcrypt.compare(password, admin.password))) {
+    if (
+      !admin ||
+      !admin.password ||
+      !(await bcrypt.compare(password, admin.password))
+    ) {
       throw new AppError("Invalid credentials", 401);
     }
     return admin;

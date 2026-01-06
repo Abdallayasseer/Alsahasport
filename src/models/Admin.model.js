@@ -9,10 +9,17 @@ const AdminSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+    },
     password: {
       type: String,
       required: true,
-      select: false, 
+      select: false,
     },
     role: {
       type: String,
@@ -36,7 +43,7 @@ AdminSchema.pre("save", async function () {
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  });
+});
 
 AdminSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
