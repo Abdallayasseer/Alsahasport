@@ -20,15 +20,10 @@ const app = express();
 app.set("trust proxy", 1);
 
 // ==========================================
-// 1. Parsing Middlewares
+// 1. CORS (MUST BE FIRST)
 // ==========================================
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-app.use(cookieParser());
-
-// 2. CORS & Logging
 const whitelist = process.env.CORS_WHITELIST
-  ? process.env.CORS_WHITELIST.split(",")
+  ? process.env.CORS_WHITELIST.split(",").map((url) => url.trim())
   : [process.env.FRONTEND_URL, "https://alsahasport-admin.vercel.app"];
 
 app.use(
@@ -38,22 +33,43 @@ app.use(
         "https://alsahasport-admin.vercel.app",
         "https://alsahasport-production.up.railway.app",
         "http://localhost:5173",
+        ...whitelist,
       ];
+
+      // Remove duplicates
+      const uniqueOrigins = [...new Set(allowedOrigins.filter(Boolean))];
+
       if (
         !origin ||
-        whitelist.indexOf(origin) !== -1 ||
-        allowedOrigins.includes(origin) ||
+        uniqueOrigins.includes(origin) ||
         process.env.NODE_ENV === "development"
       ) {
         callback(null, true);
       } else {
+        console.error(`Blocked by CORS: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "device-id",
+    ],
   })
 );
 
+// Enable Pre-Flight for all routes
+app.options("*", cors());
+
+// ==========================================
+// 2. Parsing Middlewares
+// ==========================================
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(cookieParser());
 app.use(compression());
 app.use(morgan("dev"));
 
