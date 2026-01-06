@@ -5,31 +5,32 @@ const hpp = require("hpp");
 const rateLimit = require("express-rate-limit");
 
 const setupSecurity = (app) => {
-  // Set security HTTP headers
+  // 1. HTTP Headers
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" },
     })
   );
 
-  // Data sanitization against NoSQL query injection
+  // 2. Mongo Injection Protection
   app.use(mongoSanitize());
 
-  // Data sanitization against XSS
+  // 3. XSS Protection
   app.use(xss());
 
-  // Prevent parameter pollution
+  // 4. Parameter Pollution
   app.use(hpp());
 
-  // Global Rate Limiting - General (Allow 100 requests from the same IP per 10 minutes)
+  // 5. Rate Limiting
   const limiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 10 * 60 * 1000,
+    max: 150,
     message:
       "Too many requests from this IP, please try again after 10 minutes",
+    standardHeaders: true,
+    legacyHeaders: false,
   });
 
-  // Apply the rate limiting middleware to all requests
   app.use("/api", limiter);
 };
 
