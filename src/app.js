@@ -26,10 +26,6 @@ app.set("trust proxy", 1);
 
 // 1. Global Middleware
 
-// Setup Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
-const setupSecurity = require("./middlewares/security");
-setupSecurity(app);
-
 // Implement CORS (Strict Whitelist)
 const whitelist = process.env.CORS_WHITELIST
   ? process.env.CORS_WHITELIST.split(",")
@@ -53,6 +49,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options(/(.*)/, cors(corsOptions));
+
+// Setup Security (Helmet, XSS, MongoSanitize, HPP, Global Rate Limit)
+const setupSecurity = require("./middlewares/security");
+setupSecurity(app);
 
 // Compression
 app.use(compression());

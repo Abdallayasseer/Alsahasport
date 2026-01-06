@@ -6,7 +6,11 @@ const rateLimit = require("express-rate-limit");
 
 const setupSecurity = (app) => {
   // Set security HTTP headers
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    })
+  );
 
   // Data sanitization against NoSQL query injection
   app.use(mongoSanitize());
