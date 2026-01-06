@@ -76,10 +76,10 @@ if (process.env.NODE_ENV === "development") {
 // app.use(mongoSanitize()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
 
 // Data Sanitization against XSS
-app.use(xss());
+// app.use(xss()); // CAUSES CRASH IN PRODUCTION (req.query read-only error)
 
 // Prevent Parameter Pollution
-app.use(hpp());
+// app.use(hpp()); // Temporarily disabled to ensure stability
 
 // 5. Routes
 app.use("/api/auth", authRoutes);
