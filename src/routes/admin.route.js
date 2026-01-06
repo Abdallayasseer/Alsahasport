@@ -18,9 +18,9 @@ const {
   validateCreateCode,
   validateRevealCode,
 } = require("../validators/admin.validator");
-const { authLimiter } = require("../middlewares/rateLimiters");
+const { loginLimiter } = require("../middlewares/rateLimiters");
 
-router.post("/login", authLimiter, validateLogin, loginAdmin);
+router.post("/login", loginLimiter, validateLogin, loginAdmin);
 
 // Verification Endpoint (Protected)
 const { verifyMasterPassword } = require("../controllers/admin.Controller");
