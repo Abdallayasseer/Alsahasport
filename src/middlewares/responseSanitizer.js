@@ -1,172 +1,159 @@
 const sanitize = (data, allowCode) => {
+  // 1. Base cases
   if (!data) return data;
+  if (data instanceof Date) return data; // Keep Date objects intact
+  if (Array.isArray(data)) return data.map((item) => sanitize(item, allowCode));
+  if (typeof data !== "object") return data; // Strings, numbers, booleans
 
-  if (Array.isArray(data)) {
-    return data.map((item) => sanitize(item, allowCode));
+  // 2. Handle Mongoose Documents & objects with toJSON/toObject
+  // This prevents circular reference issues and gets the clean data object
+  let plainData = data;
+  if (typeof data.toObject === "function") {
+    plainData = data.toObject();
+  } else if (typeof data.toJSON === "function") {
+    plainData = data.toJSON();
   }
 
-  if (typeof data === "object" && data !== null) {
-    // Check if it's a Date or special object type if needed (Mongoose objects usually need .toObject() but here we intercept JSON which is already plain or handled by toJSON)
-    if (data instanceof Date) return data;
+  // 3. Prepare the clean object
+  const clean = {};
 
-    const clean = {};
-    const allowedFields = [
-      // API Standard Wrappers
-      "success",
-      "message",
-      "data",
-      "count",
-      "token",
-      "accessToken",
-      "displayToken",
-      "status",
+  // Whitelist (القائمة البيضاء للمفاتيح المسموح بمرورها)
+  const allowedFields = [
+    // API Standards
+    "success",
+    "message",
+    "data",
+    "count",
+    "token",
+    "accessToken",
+    "displayToken",
+    "status",
+    "statusCode",
 
-      // Common DB
-      "_id",
-      "id",
-      "createdAt",
-      "updatedAt",
+    // IDs & Timestamps
+    "_id",
+    "id",
+    "createdAt",
+    "updatedAt",
 
-      // User / Admin
-      "username",
-      "role",
-      "isActive",
-      "mustChangePassword",
+    // Users & Admins
+    "username",
+    "role",
+    "isActive",
+    "mustChangePassword",
+    "email",
 
-      // Activation Code
-      "durationDays",
-      "maxDevices",
-      "firstActivatedAt",
-      "expiresAt",
-      "usage",
+    // Activation Codes
+    "durationDays",
+    "maxDevices",
+    "firstActivatedAt",
+    "expiresAt",
+    "usage",
 
-      // Session
-      "deviceId",
-      "ipAddress",
-      "userAgent", // Also in Channel
-      "isRevoked",
-      "lastActive",
-      "sessionId",
-      "sessions", // Assuming this is a list of sessions
+    // Sessions
+    "deviceId",
+    "ipAddress",
+    "userAgent",
+    "isRevoked",
+    "lastActive",
+    "sessionId",
 
-      // Channel
-      "name",
-      "category",
-      "logoUrl",
-      "streamUrl",
-      "referer",
+    // Channels & Streams
+    "name",
+    "category",
+    "logoUrl",
+    "streamUrl",
+    "referer",
+    "type",
+    "dns",
 
-      // StreamProvider
-      "type",
-      "dns",
-      // 'username' is already allowed above
+    // Dashboard Stats
+    "stats",
+    "totalUsers",
+    "activeSessions",
+    "totalCodes",
+    "revenue",
+    "serverStatus",
+    "trends",
+    "recentActivity",
+    "liveSessions",
+    "analytics",
+    "codesChart",
+    "sessionsChart",
+    "roleDistribution",
+    "date",
+    "value",
+    "title",
+    "time",
+    "details",
+  ];
 
-      // Dashboard
-      "stats",
-      "totalUsers",
-      "activeSessions",
-      "totalCodes",
-      "revenue",
-      "trends",
-      "serverStatus",
-      "recentActivity",
-      "liveSessions",
-      "analytics",
-      "codesChart",
-      "sessionsChart",
-      "roleDistribution",
-      "date",
-      "value",
-      "title",
-      "time",
-      "details",
-    ];
+  // Allow Errors in Development only
+  if (process.env.NODE_ENV !== "production") {
+    allowedFields.push("error", "stack");
+  }
 
-    if (process.env.NODE_ENV !== "production") {
-      allowedFields.push("error", "stack");
+  // Nested Containers (Keys that contain objects/arrays to be recursively checked)
+  const containers = [
+    "user",
+    "sessions",
+    "items",
+    "provider",
+    "channel",
+    "stats",
+    "analytics",
+    "recentActivity",
+    "liveSessions",
+    "trends",
+    "codesChart",
+    "sessionsChart",
+    "roleDistribution",
+    "data",
+  ];
+
+  Object.keys(plainData).forEach((key) => {
+    // A. Special Case: Activation Code
+    if (key === "code") {
+      if (allowCode) clean[key] = plainData[key];
+      return;
     }
 
-    Object.keys(data).forEach((key) => {
-      // 1. Explicitly ALLOW 'code' if flag is set (Create/Reveal)
-      if (key === "code" && allowCode) {
-        clean[key] = data[key];
-        return;
-      }
+    // B. Recursive Sanitization
+    // If the key is in whitelist OR it's a container, we process it.
+    if (allowedFields.includes(key) || containers.includes(key)) {
+      clean[key] = sanitize(plainData[key], allowCode);
+    }
+  });
 
-      // 2. Recursively sanitize nested objects/arrays regardless of key name if the key is generic (like 'user' or 'items')
-      // OR just recurse for EVERYTHING that passes whitelist?
-      // If key is NOT in whitelist, we drop it?
-      // What about "user" object inside "data"? "user" is not in whitelist?
-      // I should allow keys that CONTAIN objects, but sanitize the values.
-      // But how do I distinguish a "Field" from a "Container"?
-
-      // Strategy:
-      // If the value is an Object or Array, we recurse.
-      // If the value is a Primitive, we checks the whitelist.
-
-      // WAIT. If I recurse on "password": "123", it's a primitive. key="password". Check whitelist. Not there. DROP. Correct.
-      // If I recurse on "user": { username: "abc", password: "123" }.
-      // key="user". Is it in whitelist?
-      // If "user" is NOT in whitelist, I drop the whole user object? That's bad.
-      // So I need to add "user", "items", "sessions" etc to whitelist.
-
-      const containers = [
-        "user",
-        "sessions",
-        "items",
-        "provider",
-        "channel",
-        "stats",
-        "analytics",
-        "recentActivity",
-        "liveSessions",
-        "trends",
-        "codesChart",
-        "sessionsChart",
-        "roleDistribution",
-      ];
-
-      if (allowedFields.includes(key) || containers.includes(key)) {
-        clean[key] = sanitize(data[key], allowCode);
-      }
-    });
-
-    return clean;
-  }
-
-  return data;
+  return clean;
 };
 
 module.exports = (req, res, next) => {
   const originalJson = res.json;
 
+  // Override res.json
   res.json = function (body) {
-    // Apply sanitization
-    // Allow 'code' only for POST /api/admin/code
-    // Note: Adjust path matching to your routes
+    // Safety check: if body is null/undefined, just send it
+    if (!body) return originalJson.call(this, body);
+
+    // Determine if we should show the "code" field
+    // (Adjust logical paths as needed)
     const isCreateCode =
-      (req.method === "POST" && req.originalUrl.includes("/api/admin/code")) ||
+      (req.method === "POST" && req.originalUrl.includes("/codes")) || // Adjusted path usually /api/admin/codes
       (req.method === "GET" && req.originalUrl.includes("/display"));
 
-    // We assume body is the object to be sent.
-    // If body has .toObject (Mongoose doc), we might want to call it, but res.json handles that.
-    // However, we need to inspect the properties. JSON.stringify usually calls .toJSON().
-    // We should probably rely on JSON serialization first?
-    // If we sanitize *before* toJSON, we might miss virtuals or getters.
-    // Optimally, we clone: JSON.parse(JSON.stringify(body)) then sanitize.
-    // This ensures we work with the final shape.
-    let jsonBody = body;
     try {
-      // Try to sanitize
-      jsonBody = JSON.parse(JSON.stringify(body));
-      const cleaned = sanitize(jsonBody, isCreateCode);
+      // Pass the body directly to sanitize (no JSON.parse/stringify needed now)
+      const cleaned = sanitize(body, isCreateCode);
       return originalJson.call(this, cleaned);
     } catch (err) {
-      console.error("Sanitizer Failed:", err);
-      // Fallback: send original body (or safe version)
-      // If we failed to sanitize an error, sending original body might be ok in dev
-      // In prod, this could leak, but crashing 500 is worse.
-      return originalJson.call(this, body);
+      console.error("Sanitizer Critical Failure:", err);
+      // Fail Safe: If sanitization crashes, try to send a generic error
+      // instead of crashing the process or looping.
+      return res.status(500).send({
+        status: "error",
+        message: "Internal Server Error (Serialization Failure)",
+      });
     }
   };
 
