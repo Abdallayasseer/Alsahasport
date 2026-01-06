@@ -54,9 +54,12 @@ const sendErrorProd = (err, res) => {
   // Programming or other unknown error: don't leak error details
   else {
     // Send generic message
+    // Send detailed message for debugging (Temporary)
     res.status(500).json({
       status: "error",
-      message: "Something went very wrong!",
+      message: err.message,
+      name: err.name,
+      stack: err.stack, // Exposed for debugging
     });
   }
 };
