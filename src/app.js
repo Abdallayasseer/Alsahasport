@@ -22,7 +22,7 @@ const app = express();
 app.set("trust proxy", 1);
 
 // ==================================================
-// Parsing Middlewares 
+// Parsing Middlewares
 // ==================================================
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
@@ -38,7 +38,7 @@ const corsOptions = {
     const allowedOrigins = [
       "https://alsahasport-admin.vercel.app",
       "https://alsahasport-production.up.railway.app",
-      "http://localhost:5173", 
+      "http://localhost:5173",
     ];
     if (
       !origin ||
@@ -78,7 +78,7 @@ const setupSecurity = require("./middlewares/security");
 setupSecurity(app);
 
 // Output Sanitization
-app.use(require("./middlewares/responseSanitizer"));
+// app.use(require("./middlewares/responseSanitizer"));
 
 // Routes
 app.use("/api/auth", authRoutes);
