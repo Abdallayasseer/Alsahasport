@@ -13,7 +13,6 @@ const { initCronJobs } = require("./services/cronService");
 
 const PORT = process.env.PORT || 5000;
 
-// Initialize Cron Jobs
 initCronJobs();
 
 const server = app.listen(PORT, () => {

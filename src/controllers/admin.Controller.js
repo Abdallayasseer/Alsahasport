@@ -1,7 +1,7 @@
 const AdminService = require("../services/admin.service");
 const ActivationCode = require("../models/ActivationCode.model");
 const Admin = require("../models/Admin.model");
-// Channels and Providers removed
+
 const Session = require("../models/Session.model");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
@@ -18,7 +18,6 @@ exports.loginAdmin = async (req, res, next) => {
   console.log("Step 1: Login Request Received");
 
   try {
-    // 1. Environment Check
     if (!process.env.JWT_SECRET) {
       console.error("Step 1.1: CRITICAL - JWT_SECRET is missing");
       throw new Error("JWT_SECRET is not defined in environment variables");
@@ -43,7 +42,6 @@ exports.loginAdmin = async (req, res, next) => {
       });
     }
 
-    // 3. Database Check
     if (mongoose.connection.readyState !== 1) {
       console.error(
         "Step 3.2: MongoDB not ready. State:",
@@ -52,7 +50,6 @@ exports.loginAdmin = async (req, res, next) => {
       throw new Error("Database not connected");
     }
 
-    // 4. Find Admin
     console.log("Step 4: Calling AdminService.authenticate...");
     const admin = await AdminService.authenticate(loginId, password);
     console.log("Step 5: Admin authenticated successfully", { id: admin?._id });
@@ -62,17 +59,13 @@ exports.loginAdmin = async (req, res, next) => {
       throw new Error("Authentication returned null");
     }
 
-    // 5. Build Session Data
     console.log("Step 6: Analyzing IP...");
     const proxyIp = getRealIp(req);
     const ipData = analyzeIpConfidence(clientPublicIp, proxyIp);
     const sessionRole = admin.role || "admin";
 
-    // 6. Create Session & Send
     console.log("Step 7: Creating session and sending response...");
 
-    // Inline the session logic if createSessionAndSend is suspect,
-    // but for now we wrap it.
     await createSessionAndSend(
       admin,
       "admin-browser",
@@ -241,9 +234,6 @@ exports.createCode = catchAsync(async (req, res, next) => {
   try {
     // 1. Generate Code Locally
     const codeRaw = AdminService.generateRandomCode();
-
-    // 2. Step 1 (External): Call Provider API - REMOVED for now
-    // await providerService.createLine(codeRaw);
 
     // 3. Step 2 (Local): Create in MongoDB
     const { newCode, displayToken } = await AdminService.createCodeInDB(

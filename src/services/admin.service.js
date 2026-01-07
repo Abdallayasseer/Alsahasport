@@ -168,21 +168,6 @@ class AdminService {
       throw new AppError("No code found with that ID", 404);
     }
 
-    // Attempt to delete from Provider (Xtream Panel) - REMOVED for now
-    // try {
-    //   if (codeDoc.codeEncrypted) {
-    //     const decryptedCode = decryptCode(codeDoc.codeEncrypted);
-    //     if (decryptedCode) {
-    //       await providerService.deleteLine(decryptedCode);
-    //     }
-    //   }
-    // } catch (error) {
-    //   require("../utils/logger").error(
-    //     `Failed to delete line from provider: ${error.message}`
-    //   );
-    //   // Continue local deletion
-    // }
-
     await ActivationCode.findByIdAndDelete(codeId);
     await Session.deleteMany({ userId: codeId });
     return true;
