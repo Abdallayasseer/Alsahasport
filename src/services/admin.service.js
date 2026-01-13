@@ -83,9 +83,13 @@ class AdminService {
       .update(secret + codeRaw)
       .digest("hex");
 
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + parseInt(durationDays));
+
     const newCode = await ActivationCode.create({
       codeHash,
       durationDays,
+      expiresAt, // Save the calculated expiration date
       maxDevices: maxDevices || 1,
       createdBy: adminId,
       codeEncrypted: encryptCode(codeRaw), // Encrypt Raw Code

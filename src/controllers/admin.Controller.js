@@ -252,6 +252,7 @@ exports.createCode = catchAsync(async (req, res, next) => {
         status: "active",
         maxDevices: newCode.maxDevices,
         createdAt: newCode.createdAt,
+        expiresAt: newCode.expiresAt, // Return expiration date for Admin panel
         displayToken,
         expiresIn: "10m",
       },

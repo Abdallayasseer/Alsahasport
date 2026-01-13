@@ -45,6 +45,7 @@ const activationCodeSchema = new mongoose.Schema(
 // Compound Index for frequent queries filtering by status and creator
 activationCodeSchema.index({ status: 1, createdBy: 1 });
 activationCodeSchema.index({ codeHash: 1 }, { unique: true }); // Explicitly redundant but good for clarity/ensuring
-activationCodeSchema.index({ expiresAt: 1 }); // Optimize Cron Cleanup Queries
+// TTL Index: Automatically delete documents when 'expiresAt' matches the current time
+activationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("ActivationCode", activationCodeSchema);
